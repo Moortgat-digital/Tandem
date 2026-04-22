@@ -1,7 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const ROOT_PUBLIC_PATHS = new Set(["/login", "/auth/callback", "/reset-password"]);
+const ROOT_PUBLIC_PATHS = new Set(["/", "/login", "/auth/callback", "/reset-password"]);
+const ROOT_SEGMENTS = new Set([
+  "login",
+  "dashboard",
+  "admin",
+  "animateur",
+  "reset-password",
+]);
 const TENANT_PUBLIC_SEGMENTS = new Set(["login", "auth", "reset-password"]);
 
 /**
@@ -34,6 +41,7 @@ export async function middleware(request: NextRequest) {
     maybeSlug !== undefined &&
     maybeSlug !== "api" &&
     maybeSlug !== "auth" &&
+    !ROOT_SEGMENTS.has(maybeSlug) &&
     !ROOT_PUBLIC_PATHS.has(pathname);
 
   // Pages publiques (login, callback) : pas de guard.
