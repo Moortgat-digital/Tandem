@@ -1,6 +1,6 @@
 # Tandem by Moortgat
 
-Application web SaaS multi-tenant de suivi collaboratif de formation.
+Application web SaaS multi-organisation de suivi collaboratif de formation.
 
 Un collaborateur (N) et son manager (N+1) remplissent ensemble un document de suivi structuré à trois moments clés d'un parcours de formation.
 
@@ -24,34 +24,34 @@ npm run dev
 
 ```
 app/
-  (root)/            # Admin + Animateur (sans slug)
-  [tenant]/          # Espace client (slug URL)
+  (root)/             # Admin + Animateur (sans slug)
+  [organisation]/     # Espace organisation cliente (slug URL)
   api/
 components/
-  ui/                # shadcn/ui
-  tandem/            # Formulaire Tandem (grille 4×5, cellules, verrouillage)
-  dashboard/         # Dashboards par rôle
-  admin/             # Espace admin
-  layout/            # Providers + Navbar + RoleGuard
+  ui/                 # shadcn/ui
+  tandem/             # Formulaire Tandem (grille 4×5, cellules, verrouillage)
+  dashboard/          # Dashboards par rôle
+  admin/              # Espace admin
+  layout/             # Providers + Navbar + RoleGuard
 lib/
-  supabase/          # Clients browser + server
-  brevo.ts           # Emails transactionnels
-  tenant.ts          # Résolution tenant depuis slug
-  tandem-workflow.ts # Transitions d'état
-  realtime-collab.ts # Verrouillage par bloc Realtime
+  supabase/           # Clients browser + server
+  brevo.ts            # Emails transactionnels
+  organisation.ts     # Résolution organisation depuis slug
+  tandem-workflow.ts  # Transitions d'état
+  realtime-collab.ts  # Verrouillage par bloc Realtime
 types/
-  database.ts        # Types générés via `supabase gen types typescript`
-  tandem.ts          # Types métier
-supabase/migrations/ # Migrations SQL
-middleware.ts        # Auth guard + résolution tenant
+  database.ts         # Types générés via `supabase gen types typescript`
+  tandem.ts           # Types métier
+supabase/migrations/  # Migrations SQL
+middleware.ts         # Auth guard + résolution organisation
 ```
 
 ## Rôles
 
-- **Administrateur** (racine) — gère tenants, sessions, utilisateurs, binômes
+- **Administrateur** (racine) — gère organisations, sessions, utilisateurs, binômes
 - **Animateur** (racine) — consulte, relance par email
-- **Participant / N** (tenant) — remplit sa partie du formulaire
-- **Manager / N+1** (tenant) — remplit sa partie, valide les étapes
+- **Participant / N** (organisation) — remplit sa partie du formulaire
+- **Manager / N+1** (organisation) — remplit sa partie, valide les étapes
 - **Double-rôle N / N+1** — détecté dynamiquement via `/api/me/contexts`
 
 ## Règles absolues

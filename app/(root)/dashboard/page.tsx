@@ -32,7 +32,7 @@ export default async function RootDashboardPage() {
       <section className="grid gap-4 md:grid-cols-2">
         <Card
           title="Espaces clients"
-          description="Gérer les tenants, sessions et utilisateurs."
+          description="Gérer les organisations, sessions et utilisateurs."
           href="/admin"
           adminOnly
           role={profile.role}

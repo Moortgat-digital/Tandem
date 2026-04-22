@@ -43,8 +43,8 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        tenant: {
-          DEFAULT: "var(--tenant-primary, #1B3A6B)",
+        organisation: {
+          DEFAULT: "var(--organisation-primary, #1B3A6B)",
         },
       },
       borderRadius: {

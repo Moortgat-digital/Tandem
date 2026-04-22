@@ -9,16 +9,16 @@ const ROOT_SEGMENTS = new Set([
   "animateur",
   "reset-password",
 ]);
-const TENANT_PUBLIC_SEGMENTS = new Set(["login", "auth", "reset-password"]);
+const ORGANISATION_PUBLIC_SEGMENTS = new Set(["login", "auth", "reset-password"]);
 
 /**
  * Middleware : rafraîchit la session Supabase et applique le routage par rôle.
  *
  * Règles :
- *  - Tenant slug (/[slug]/...) = espace participant/manager
+ *  - Organisation slug (/[slug]/...) = espace participant/manager
  *  - Racine (/dashboard, /admin/...) = espace admin/animateur
  *  - Redirections par rôle si l'utilisateur essaie d'accéder à un espace auquel il n'a pas droit
- *  - Résolution tenant : le slug est injecté dans le header `x-tandem-tenant-slug`
+ *  - Le slug d'organisation résolu est injecté dans `x-tandem-organisation-slug`
  *    pour être consommé par les layouts.
  */
 export async function middleware(request: NextRequest) {
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
 
   const segments = pathname.split("/").filter(Boolean);
   const maybeSlug = segments[0];
-  const isTenantRoute =
+  const isOrganisationRoute =
     maybeSlug !== undefined &&
     maybeSlug !== "api" &&
     maybeSlug !== "auth" &&
@@ -49,9 +49,9 @@ export async function middleware(request: NextRequest) {
     return response;
   }
   if (
-    isTenantRoute &&
+    isOrganisationRoute &&
     segments[1] !== undefined &&
-    TENANT_PUBLIC_SEGMENTS.has(segments[1])
+    ORGANISATION_PUBLIC_SEGMENTS.has(segments[1])
   ) {
     return response;
   }
@@ -64,7 +64,7 @@ export async function middleware(request: NextRequest) {
   // Non authentifié → login approprié.
   if (!user) {
     const url = request.nextUrl.clone();
-    url.pathname = isTenantRoute && maybeSlug ? `/${maybeSlug}/login` : "/login";
+    url.pathname = isOrganisationRoute && maybeSlug ? `/${maybeSlug}/login` : "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
@@ -72,7 +72,7 @@ export async function middleware(request: NextRequest) {
   // Récupère le rôle du profil.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, tenant_id, is_active")
+    .select("role, organisation_id, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -85,48 +85,48 @@ export async function middleware(request: NextRequest) {
 
   const isRootRole = profile.role === "admin" || profile.role === "animateur";
 
-  // Rôle racine essayant d'entrer dans un espace tenant : on renvoie au dashboard racine.
-  if (isTenantRoute && isRootRole) {
+  // Rôle racine essayant d'entrer dans un espace organisation : renvoi au dashboard racine.
+  if (isOrganisationRoute && isRootRole) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
-  // Participant/manager essayant d'entrer dans l'espace racine : renvoi sur son tenant.
-  if (!isTenantRoute && !isRootRole && profile.tenant_id) {
-    const { data: tenant } = await supabase
-      .from("tenants")
+  // Participant/manager essayant d'entrer dans l'espace racine : renvoi sur son organisation.
+  if (!isOrganisationRoute && !isRootRole && profile.organisation_id) {
+    const { data: organisation } = await supabase
+      .from("organisations")
       .select("slug")
-      .eq("id", profile.tenant_id)
+      .eq("id", profile.organisation_id)
       .maybeSingle();
-    if (tenant) {
+    if (organisation) {
       const url = request.nextUrl.clone();
-      url.pathname = `/${tenant.slug}/dashboard`;
+      url.pathname = `/${organisation.slug}/dashboard`;
       return NextResponse.redirect(url);
     }
   }
 
-  // Tenant route : vérifie que le slug correspond bien au tenant de l'utilisateur.
-  if (isTenantRoute && !isRootRole && profile.tenant_id && maybeSlug) {
-    const { data: tenant } = await supabase
-      .from("tenants")
+  // Organisation route : vérifie que le slug correspond bien à l'organisation de l'utilisateur.
+  if (isOrganisationRoute && !isRootRole && profile.organisation_id && maybeSlug) {
+    const { data: organisation } = await supabase
+      .from("organisations")
       .select("id, slug")
       .eq("slug", maybeSlug)
       .eq("is_active", true)
       .maybeSingle();
-    if (!tenant) {
+    if (!organisation) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      url.searchParams.set("error", "tenant_not_found");
+      url.searchParams.set("error", "organisation_not_found");
       return NextResponse.redirect(url);
     }
-    if (tenant.id !== profile.tenant_id) {
+    if (organisation.id !== profile.organisation_id) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      url.searchParams.set("error", "tenant_mismatch");
+      url.searchParams.set("error", "organisation_mismatch");
       return NextResponse.redirect(url);
     }
-    response.headers.set("x-tandem-tenant-slug", tenant.slug);
+    response.headers.set("x-tandem-organisation-slug", organisation.slug);
   }
 
   return response;

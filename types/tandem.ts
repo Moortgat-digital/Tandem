@@ -30,7 +30,7 @@ export type AuditAction =
   | "edit_document";
 
 export type Profile = Tables<"profiles">;
-export type Tenant = Tables<"tenants">;
+export type Organisation = Tables<"organisations">;
 export type Session = Tables<"sessions">;
 export type TandemPair = Tables<"tandem_pairs">;
 export type TandemDocument = Tables<"tandem_documents">;
@@ -45,9 +45,9 @@ export type TandemValidation = Tables<"tandem_validations">;
 export type UserContext =
   | { kind: "root"; role: "admin" | "animateur" }
   | {
-      kind: "tenant";
-      tenantId: string;
-      tenantSlug: string;
+      kind: "organisation";
+      organisationId: string;
+      organisationSlug: string;
       roles: ("participant" | "manager")[];
     };
 

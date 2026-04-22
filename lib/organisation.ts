@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Tenant } from "@/types/tandem";
+import type { Organisation } from "@/types/tandem";
 
 /**
- * Résout un tenant à partir de son slug URL.
- * Renvoie null si inconnu ou désactivé.
+ * Résout une organisation à partir de son slug URL.
+ * Renvoie null si inconnue ou désactivée.
  */
-export async function getTenantBySlug(slug: string): Promise<Tenant | null> {
+export async function getOrganisationBySlug(slug: string): Promise<Organisation | null> {
   const supabase = await createClient();
   const { data } = await supabase
-    .from("tenants")
+    .from("organisations")
     .select("*")
     .eq("slug", slug)
     .eq("is_active", true)

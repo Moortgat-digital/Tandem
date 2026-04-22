@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function TenantDashboardPage({
+export default async function OrganisationDashboardPage({
   params,
 }: {
-  params: Promise<{ tenant: string }>;
+  params: Promise<{ organisation: string }>;
 }) {
-  const { tenant: slug } = await params;
+  const { organisation: slug } = await params;
   const supabase = await createClient();
   const {
     data: { user },

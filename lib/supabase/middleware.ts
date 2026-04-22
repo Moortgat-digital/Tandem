@@ -7,7 +7,7 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
 /**
  * Rafraîchit la session Supabase à chaque requête et propage les cookies.
  * Retourne aussi le user courant pour permettre au middleware d'appliquer
- * les règles de routage (guard par rôle, résolution tenant).
+ * les règles de routage (guard par rôle, résolution organisation).
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

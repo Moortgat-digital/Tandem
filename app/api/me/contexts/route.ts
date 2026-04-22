@@ -16,7 +16,7 @@ export async function GET(): Promise<NextResponse<{ context: UserContext } | { e
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, tenant_id")
+    .select("role, organisation_id")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -28,18 +28,18 @@ export async function GET(): Promise<NextResponse<{ context: UserContext } | { e
     return NextResponse.json({ context: { kind: "root", role } });
   }
 
-  if (!profile.tenant_id) {
-    return NextResponse.json({ error: "tenant_missing" }, { status: 400 });
+  if (!profile.organisation_id) {
+    return NextResponse.json({ error: "organisation_missing" }, { status: 400 });
   }
 
-  const { data: tenant } = await supabase
-    .from("tenants")
+  const { data: organisation } = await supabase
+    .from("organisations")
     .select("id, slug")
-    .eq("id", profile.tenant_id)
+    .eq("id", profile.organisation_id)
     .maybeSingle();
 
-  if (!tenant) {
-    return NextResponse.json({ error: "tenant_not_found" }, { status: 404 });
+  if (!organisation) {
+    return NextResponse.json({ error: "organisation_not_found" }, { status: 404 });
   }
 
   const [{ count: participantCount }, { count: managerCount }] = await Promise.all([
@@ -62,9 +62,9 @@ export async function GET(): Promise<NextResponse<{ context: UserContext } | { e
 
   return NextResponse.json({
     context: {
-      kind: "tenant",
-      tenantId: tenant.id,
-      tenantSlug: tenant.slug,
+      kind: "organisation",
+      organisationId: organisation.id,
+      organisationSlug: organisation.slug,
       roles,
     },
   });

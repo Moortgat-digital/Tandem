@@ -63,24 +63,9 @@ export type Database = {
         ]
       }
       formation_groups: {
-        Row: {
-          created_at: string | null
-          id: string
-          name: string
-          session_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          name: string
-          session_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          name?: string
-          session_id?: string
-        }
+        Row: { created_at: string | null; id: string; name: string; session_id: string }
+        Insert: { created_at?: string | null; id?: string; name: string; session_id: string }
+        Update: { created_at?: string | null; id?: string; name?: string; session_id?: string }
         Relationships: [
           {
             foreignKeyName: "formation_groups_session_id_fkey"
@@ -95,34 +80,41 @@ export type Database = {
         Row: {
           brevo_msg_id: string | null
           id: string
+          organisation_id: string | null
           recipient_id: string
           sent_at: string | null
           sent_by: string | null
           subject: string
-          tenant_id: string | null
           type: string
         }
         Insert: {
           brevo_msg_id?: string | null
           id?: string
+          organisation_id?: string | null
           recipient_id: string
           sent_at?: string | null
           sent_by?: string | null
           subject: string
-          tenant_id?: string | null
           type: string
         }
         Update: {
           brevo_msg_id?: string | null
           id?: string
+          organisation_id?: string | null
           recipient_id?: string
           sent_at?: string | null
           sent_by?: string | null
           subject?: string
-          tenant_id?: string | null
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notification_logs_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notification_logs_recipient_id_fkey"
             columns: ["recipient_id"]
@@ -137,14 +129,40 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "notification_logs_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
         ]
+      }
+      organisations: {
+        Row: {
+          contact_email: string | null
+          created_at: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          primary_color: string | null
+          slug: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          primary_color?: string | null
+          slug: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          primary_color?: string | null
+          slug?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -155,8 +173,8 @@ export type Database = {
           invitation_sent: boolean | null
           is_active: boolean | null
           last_name: string
+          organisation_id: string | null
           role: string
-          tenant_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -166,8 +184,8 @@ export type Database = {
           invitation_sent?: boolean | null
           is_active?: boolean | null
           last_name: string
+          organisation_id?: string | null
           role: string
-          tenant_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -177,38 +195,23 @@ export type Database = {
           invitation_sent?: boolean | null
           is_active?: boolean | null
           last_name?: string
+          organisation_id?: string | null
           role?: string
-          tenant_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_tenant_id_fkey"
-            columns: ["tenant_id"]
+            foreignKeyName: "profiles_organisation_id_fkey"
+            columns: ["organisation_id"]
             isOneToOne: false
-            referencedRelation: "tenants"
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
       }
       session_animateurs: {
-        Row: {
-          animateur_id: string
-          created_at: string | null
-          id: string
-          session_id: string
-        }
-        Insert: {
-          animateur_id: string
-          created_at?: string | null
-          id?: string
-          session_id: string
-        }
-        Update: {
-          animateur_id?: string
-          created_at?: string | null
-          id?: string
-          session_id?: string
-        }
+        Row: { animateur_id: string; created_at: string | null; id: string; session_id: string }
+        Insert: { animateur_id: string; created_at?: string | null; id?: string; session_id: string }
+        Update: { animateur_id?: string; created_at?: string | null; id?: string; session_id?: string }
         Relationships: [
           {
             foreignKeyName: "session_animateurs_animateur_id_fkey"
@@ -282,8 +285,8 @@ export type Database = {
           id: string
           name: string
           nb_priorites_max: number | null
+          organisation_id: string
           status: string | null
-          tenant_id: string
         }
         Insert: {
           allow_multiple_rdv_inter?: boolean | null
@@ -291,8 +294,8 @@ export type Database = {
           id?: string
           name: string
           nb_priorites_max?: number | null
+          organisation_id: string
           status?: string | null
-          tenant_id: string
         }
         Update: {
           allow_multiple_rdv_inter?: boolean | null
@@ -300,15 +303,15 @@ export type Database = {
           id?: string
           name?: string
           nb_priorites_max?: number | null
+          organisation_id?: string
           status?: string | null
-          tenant_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "sessions_tenant_id_fkey"
-            columns: ["tenant_id"]
+            foreignKeyName: "sessions_organisation_id_fkey"
+            columns: ["organisation_id"]
             isOneToOne: false
-            referencedRelation: "tenants"
+            referencedRelation: "organisations"
             referencedColumns: ["id"]
           },
         ]
@@ -449,24 +452,9 @@ export type Database = {
         ]
       }
       tandem_priorities: {
-        Row: {
-          document_id: string
-          id: string
-          position: number
-          title: string
-        }
-        Insert: {
-          document_id: string
-          id?: string
-          position: number
-          title: string
-        }
-        Update: {
-          document_id?: string
-          id?: string
-          position?: number
-          title?: string
-        }
+        Row: { document_id: string; id: string; position: number; title: string }
+        Insert: { document_id: string; id?: string; position: number; title: string }
+        Update: { document_id?: string; id?: string; position?: number; title?: string }
         Relationships: [
           {
             foreignKeyName: "tandem_priorities_document_id_fkey"
@@ -516,46 +504,13 @@ export type Database = {
           },
         ]
       }
-      tenants: {
-        Row: {
-          contact_email: string | null
-          created_at: string | null
-          display_name: string
-          id: string
-          is_active: boolean | null
-          logo_url: string | null
-          primary_color: string | null
-          slug: string
-        }
-        Insert: {
-          contact_email?: string | null
-          created_at?: string | null
-          display_name: string
-          id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          primary_color?: string | null
-          slug: string
-        }
-        Update: {
-          contact_email?: string | null
-          created_at?: string | null
-          display_name?: string
-          id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          primary_color?: string | null
-          slug?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      current_profile_organisation_id: { Args: Record<PropertyKey, never>; Returns: string }
       current_profile_role: { Args: Record<PropertyKey, never>; Returns: string }
-      current_profile_tenant_id: { Args: Record<PropertyKey, never>; Returns: string }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_animateur: { Args: Record<PropertyKey, never>; Returns: boolean }
       is_animateur_of_document: {
