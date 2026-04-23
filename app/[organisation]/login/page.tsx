@@ -4,12 +4,17 @@ import { LoginForm } from "@/components/auth/LoginForm";
 
 export default async function OrganisationLoginPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ organisation: string }>;
+  searchParams: Promise<{ error?: string; magic_sent?: string; next?: string }>;
 }) {
   const { organisation: slug } = await params;
+  const search = await searchParams;
   const organisation = await getOrganisationBySlug(slug);
   if (!organisation) notFound();
+
+  const loginPath = `/${organisation.slug}/login`;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
@@ -28,7 +33,12 @@ export default async function OrganisationLoginPage({
             Tandem by Moortgat — espace participant / manager
           </p>
         </div>
-        <LoginForm redirectTo={`/${organisation.slug}/dashboard`} />
+        <LoginForm
+          redirectTo={search.next ?? `/${organisation.slug}/dashboard`}
+          loginPath={loginPath}
+          error={search.error}
+          magicSent={search.magic_sent === "1"}
+        />
       </div>
     </main>
   );

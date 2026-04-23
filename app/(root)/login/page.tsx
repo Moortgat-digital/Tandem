@@ -2,7 +2,12 @@ import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata = { title: "Connexion — Tandem by Moortgat" };
 
-export default function RootLoginPage() {
+export default async function RootLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; magic_sent?: string; next?: string }>;
+}) {
+  const params = await searchParams;
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
       <div className="w-full max-w-md space-y-6 rounded-xl border bg-card p-8 shadow-sm">
@@ -12,7 +17,12 @@ export default function RootLoginPage() {
             Espace administrateur / animateur
           </p>
         </div>
-        <LoginForm redirectTo="/dashboard" />
+        <LoginForm
+          redirectTo={params.next ?? "/dashboard"}
+          loginPath="/login"
+          error={params.error}
+          magicSent={params.magic_sent === "1"}
+        />
       </div>
     </main>
   );

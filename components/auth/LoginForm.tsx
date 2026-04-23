@@ -1,72 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import {
+  signInWithPasswordAction,
+  sendMagicLinkAction,
+} from "@/app/(root)/login/actions";
 
 type Mode = "password" | "magic_link";
 
-export function LoginForm({ redirectTo }: { redirectTo: string }) {
+export function LoginForm({
+  redirectTo,
+  loginPath = "/login",
+  error,
+  magicSent = false,
+}: {
+  redirectTo: string;
+  loginPath?: string;
+  error?: string;
+  magicSent?: boolean;
+}) {
   const [mode, setMode] = useState<Mode>("password");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState<
-    | { kind: "idle" }
-    | { kind: "loading" }
-    | { kind: "error"; message: string }
-    | { kind: "magic_sent" }
-  >({ kind: "idle" });
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus({ kind: "loading" });
-    const supabase = createClient();
-
-    try {
-      if (mode === "password") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          setStatus({ kind: "error", message: error.message });
-          return;
-        }
-        // Hard redirect : garantit que le middleware revoit la session avec
-        // les cookies fraîchement posés par @supabase/ssr.
-        window.location.assign(redirectTo);
-        return;
-      }
-
-      const redirect = new URL(
-        "/auth/callback",
-        process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
-      );
-      redirect.searchParams.set("next", redirectTo);
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: redirect.toString() },
-      });
-      if (error) {
-        setStatus({ kind: "error", message: error.message });
-        return;
-      }
-      setStatus({ kind: "magic_sent" });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erreur inconnue";
-      setStatus({ kind: "error", message });
-    }
-  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      action={mode === "password" ? signInWithPasswordAction : sendMagicLinkAction}
+      className="space-y-4"
+    >
+      <input type="hidden" name="next" value={redirectTo} />
+      <input type="hidden" name="login_path" value={loginPath} />
+
       <div className="space-y-1">
         <label htmlFor="email" className="text-sm font-medium">
           Email
         </label>
         <input
           id="email"
+          name="email"
           type="email"
           required
           autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
           className="border-input bg-background focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2"
         />
       </div>
@@ -78,20 +50,17 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           </label>
           <input
             id="password"
+            name="password"
             type="password"
             required
             autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             className="border-input bg-background focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2"
           />
         </div>
       ) : null}
 
-      {status.kind === "error" ? (
-        <p className="text-destructive text-sm">{status.message}</p>
-      ) : null}
-      {status.kind === "magic_sent" ? (
+      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      {magicSent ? (
         <p className="text-sm text-green-700">
           Un lien de connexion vient de vous être envoyé par email.
         </p>
@@ -99,14 +68,9 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
 
       <button
         type="submit"
-        disabled={status.kind === "loading"}
         className="bg-primary text-primary-foreground w-full rounded-md px-4 py-2 text-sm font-medium shadow-sm hover:opacity-90 disabled:opacity-60"
       >
-        {status.kind === "loading"
-          ? "Connexion…"
-          : mode === "password"
-            ? "Se connecter"
-            : "Recevoir un lien de connexion"}
+        {mode === "password" ? "Se connecter" : "Recevoir un lien de connexion"}
       </button>
 
       <button
