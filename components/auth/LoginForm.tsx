@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "password" | "magic_link";
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<
-    { kind: "idle" } | { kind: "loading" } | { kind: "error"; message: string } | { kind: "magic_sent" }
+    | { kind: "idle" }
+    | { kind: "loading" }
+    | { kind: "error"; message: string }
+    | { kind: "magic_sent" }
   >({ kind: "idle" });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -20,31 +21,37 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     setStatus({ kind: "loading" });
     const supabase = createClient();
 
-    if (mode === "password") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      if (mode === "password") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          setStatus({ kind: "error", message: error.message });
+          return;
+        }
+        // Hard redirect : garantit que le middleware revoit la session avec
+        // les cookies fraîchement posés par @supabase/ssr.
+        window.location.assign(redirectTo);
+        return;
+      }
+
+      const redirect = new URL(
+        "/auth/callback",
+        process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
+      );
+      redirect.searchParams.set("next", redirectTo);
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: redirect.toString() },
+      });
       if (error) {
         setStatus({ kind: "error", message: error.message });
         return;
       }
-      router.push(redirectTo);
-      router.refresh();
-      return;
+      setStatus({ kind: "magic_sent" });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur inconnue";
+      setStatus({ kind: "error", message });
     }
-
-    const redirect = new URL(
-      "/auth/callback",
-      process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
-    );
-    redirect.searchParams.set("next", redirectTo);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirect.toString() },
-    });
-    if (error) {
-      setStatus({ kind: "error", message: error.message });
-      return;
-    }
-    setStatus({ kind: "magic_sent" });
   }
 
   return (
