@@ -1,5 +1,8 @@
+import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Organisation } from "@/types/tandem";
+
+export { normalizeSlug } from "@/lib/slug";
 
 /**
  * Résout une organisation à partir de son slug URL.
@@ -14,13 +17,4 @@ export async function getOrganisationBySlug(slug: string): Promise<Organisation 
     .eq("is_active", true)
     .maybeSingle();
   return data;
-}
-
-export function normalizeSlug(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }

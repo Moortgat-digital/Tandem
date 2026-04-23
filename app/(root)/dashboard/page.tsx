@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { Building2, Users } from "lucide-react";
 
 export const metadata = { title: "Tableau de bord — Tandem" };
 
@@ -30,18 +32,19 @@ export default async function RootDashboardPage() {
       </header>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Card
-          title="Espaces clients"
-          description="Gérer les organisations, sessions et utilisateurs."
-          href="/admin"
-          adminOnly
-          role={profile.role}
-        />
+        {profile.role === "admin" ? (
+          <Card
+            title="Administration"
+            description="Gérer les organisations, sessions et utilisateurs."
+            href="/admin"
+            icon={<Building2 className="h-5 w-5" />}
+          />
+        ) : null}
         <Card
           title="Mes participants"
           description="Consulter les formulaires et envoyer des relances."
           href="/animateur"
-          role={profile.role}
+          icon={<Users className="h-5 w-5" />}
         />
       </section>
     </main>
@@ -52,23 +55,23 @@ function Card({
   title,
   description,
   href,
-  adminOnly = false,
-  role,
+  icon,
 }: {
   title: string;
   description: string;
   href: string;
-  adminOnly?: boolean;
-  role: string;
+  icon: React.ReactNode;
 }) {
-  if (adminOnly && role !== "admin") return null;
   return (
-    <a
+    <Link
       href={href}
       className="rounded-lg border bg-card p-6 shadow-sm transition hover:border-primary"
     >
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+        {icon}
+      </div>
       <h2 className="text-lg font-semibold">{title}</h2>
       <p className="text-muted-foreground mt-1 text-sm">{description}</p>
-    </a>
+    </Link>
   );
 }
