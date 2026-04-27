@@ -56,8 +56,11 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Endpoints API auth : laisser passer, la route gère elle-même.
-  if (pathname.startsWith("/api/auth")) {
+  // Endpoints API : la route gère elle-même l'authentification et les
+  // permissions (requireAdmin / requireTandemPairAccess). Le middleware ne
+  // doit PAS appliquer le routage tenant ici, sinon un participant qui POST
+  // sur /api/tandems/[pairId]/* serait redirigé vers /[slug]/dashboard.
+  if (pathname.startsWith("/api/")) {
     return response;
   }
 
