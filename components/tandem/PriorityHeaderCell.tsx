@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import {
+  useTandemRealtime,
+  useTargetLock,
+} from "./TandemRealtimeProvider";
+import type { RealtimeTarget } from "@/types/tandem";
 
 export function PriorityHeaderCell({
   pairId,
@@ -17,30 +22,59 @@ export function PriorityHeaderCell({
   editable: boolean;
 }) {
   const router = useRouter();
+  const realtime = useTandemRealtime();
+  const target = useMemo<RealtimeTarget>(
+    () => ({ kind: "priority_title", position }),
+    [position]
+  );
+  const lock = useTargetLock(target);
+
   const [value, setValue] = useState(initialTitle);
   const [saving, setSaving] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestRef = useRef(initialTitle);
+  const initialRef = useRef(initialTitle);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const isFocusedRef = useRef(false);
 
   useEffect(() => {
     setValue(initialTitle);
     latestRef.current = initialTitle;
+    initialRef.current = initialTitle;
   }, [initialTitle]);
+
+  useEffect(() => {
+    return realtime.registerContentListener(target, (content) => {
+      if (isFocusedRef.current) return;
+      setValue(content);
+      latestRef.current = content;
+      initialRef.current = content;
+    });
+  }, [realtime, target]);
+
+  useEffect(() => {
+    return realtime.registerForceBlur(target, () => {
+      if (inputRef.current) inputRef.current.blur();
+    });
+  }, [realtime, target]);
 
   const save = useCallback(
     async (title: string) => {
-      if (!title.trim()) return;
+      const trimmed = title.trim();
+      if (!trimmed) return;
       setSaving(true);
-      await fetch(`/api/tandems/${pairId}/priorities`, {
+      const res = await fetch(`/api/tandems/${pairId}/priorities`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ position, title: title.trim() }),
+        body: JSON.stringify({ position, title: trimmed }),
       });
       setSaving(false);
-      // Notifie le serveur : le grid doit recalculer quelles colonnes sont actives.
+      if (!res.ok) return;
+      initialRef.current = trimmed;
+      realtime.broadcastContent(target, trimmed);
       router.refresh();
     },
-    [pairId, position, router]
+    [pairId, position, router, realtime, target]
   );
 
   function scheduleSave(next: string) {
@@ -54,7 +88,7 @@ export function PriorityHeaderCell({
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    if (latestRef.current.trim() && latestRef.current !== initialTitle) {
+    if (latestRef.current.trim() && latestRef.current !== initialRef.current) {
       void save(latestRef.current);
     }
   }
@@ -78,20 +112,43 @@ export function PriorityHeaderCell({
     );
   }
 
+  const isLockedByOther = Boolean(lock);
+
   return (
     <div className="space-y-1">
       <Input
+        ref={inputRef}
         value={value}
+        readOnly={isLockedByOther}
+        onFocus={() => {
+          if (isLockedByOther) return;
+          isFocusedRef.current = true;
+          realtime.focus(target);
+        }}
+        onBlur={() => {
+          isFocusedRef.current = false;
+          flushSave();
+          realtime.blur(target);
+        }}
         onChange={(e) => {
+          if (isLockedByOther) return;
           setValue(e.target.value);
           scheduleSave(e.target.value);
         }}
-        onBlur={flushSave}
         placeholder={`Priorité ${position}`}
-        className="font-medium"
+        className={cn(
+          "font-medium",
+          isLockedByOther && "cursor-not-allowed border-amber-400 bg-amber-50/40"
+        )}
       />
       <p className="text-[10px] text-muted-foreground">
-        {saving ? "Enregistrement…" : value.trim() ? "" : "Nomme la priorité pour activer la colonne"}
+        {isLockedByOther
+          ? <span className="text-amber-700">{lock?.firstName} modifie ce titre…</span>
+          : saving
+            ? "Enregistrement…"
+            : value.trim()
+              ? ""
+              : "Nomme la priorité pour activer la colonne"}
       </p>
     </div>
   );

@@ -54,25 +54,36 @@ export type UserContext =
 /**
  * Événements Realtime du verrouillage par cellule.
  * Channel : `tandem_pair:${tandemPairId}`
+ *
+ * Une "cible" peut être une cellule de la grille (priorité × étape) ou
+ * le titre d'une colonne de priorité.
  */
-export type CellKey = { priorityPos: number; stage: TandemStage };
+export type RealtimeTarget =
+  | { kind: "cell"; priorityPos: number; stage: TandemStage }
+  | { kind: "priority_title"; position: number };
 
 export type RealtimeCellEvent =
   | {
-      type: "focus_cell";
+      type: "focus";
       userId: string;
       userFirstName: string;
-      cell: CellKey;
+      target: RealtimeTarget;
     }
   | {
-      type: "blur_cell";
+      type: "blur";
       userId: string;
-      cell: CellKey;
+      target: RealtimeTarget;
     }
   | {
       type: "content_update";
       userId: string;
-      cell: CellKey;
+      target: RealtimeTarget;
       content: string;
       updatedAt: string;
     };
+
+export type RealtimePresenceMeta = {
+  userId: string;
+  firstName: string;
+  role: "participant" | "manager";
+};

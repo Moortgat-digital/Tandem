@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { TandemHeader } from "@/components/tandem/TandemHeader";
 import { TandemGrid } from "@/components/tandem/TandemGrid";
 import { ValidateStageButton } from "@/components/tandem/ValidateStageButton";
+import { TandemRealtimeProvider } from "@/components/tandem/TandemRealtimeProvider";
+import { PresenceBadge } from "@/components/tandem/PresenceBadge";
 import {
   currentEditableStage,
   statusLabel,
@@ -93,31 +95,41 @@ export default async function TandemPage({
   const isCompleted = status === "completed";
   const hasPriority = (priorities ?? []).some((p) => p.title.trim().length > 0);
 
+  const meFirstName =
+    role === "participant" ? participant.first_name : manager.first_name;
+
   return (
-    <main className="mx-auto max-w-7xl p-6">
-      <div className="mb-4 text-xs text-muted-foreground">
-        <Link href={`/${slug}/dashboard`} className="hover:text-foreground">
-          ← Dashboard
-        </Link>
-      </div>
-
-      <header className="mb-6 flex items-start justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {session.name} · {role === "participant" ? "Participant (N)" : "Manager (N+1)"}
-          </p>
-          <h1 className="text-2xl font-semibold">
-            Tandem — {participant.first_name} {participant.last_name} × {manager.first_name}{" "}
-            {manager.last_name}
-          </h1>
+    <TandemRealtimeProvider
+      pairId={pair.id}
+      me={{ userId: user.id, firstName: meFirstName, role }}
+    >
+      <main className="mx-auto max-w-7xl p-6">
+        <div className="mb-4 text-xs text-muted-foreground">
+          <Link href={`/${slug}/dashboard`} className="hover:text-foreground">
+            ← Dashboard
+          </Link>
         </div>
-        <Badge variant={isCompleted ? "success" : "secondary"}>
-          {statusLabel(status)}
-        </Badge>
-      </header>
 
-      <div className="space-y-6">
-        <TandemHeader
+        <header className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {session.name} · {role === "participant" ? "Participant (N)" : "Manager (N+1)"}
+            </p>
+            <h1 className="text-2xl font-semibold">
+              Tandem — {participant.first_name} {participant.last_name} × {manager.first_name}{" "}
+              {manager.last_name}
+            </h1>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant={isCompleted ? "success" : "secondary"}>
+              {statusLabel(status)}
+            </Badge>
+            <PresenceBadge />
+          </div>
+        </header>
+
+        <div className="space-y-6">
+          <TandemHeader
           pairId={pair.id}
           participantName={`${participant.first_name} ${participant.last_name}`}
           managerName={`${manager.first_name} ${manager.last_name}`}
@@ -170,7 +182,8 @@ export default async function TandemPage({
             <p className="text-sm">Parcours terminé — aucune édition supplémentaire.</p>
           </section>
         )}
-      </div>
-    </main>
+        </div>
+      </main>
+    </TandemRealtimeProvider>
   );
 }

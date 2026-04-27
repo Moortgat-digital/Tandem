@@ -1,61 +1,43 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
-import type { CellKey, RealtimeCellEvent } from "@/types/tandem";
+import type { RealtimeTarget, TandemStage } from "@/types/tandem";
 
 /**
  * Channel Supabase Realtime dédié à un binôme Tandem.
  * Utilisé pour :
- *  - verrouillage exclusif par cellule (focus/blur)
+ *  - verrouillage transitoire par cellule / titre de priorité (focus / blur)
  *  - diffusion du contenu mis à jour après auto-save
- *  - indicateur de présence globale
+ *  - indicateur de présence (qui est en ligne sur le doc)
  */
 export function tandemChannelName(tandemPairId: string): string {
   return `tandem_pair:${tandemPairId}`;
 }
 
-export function cellKey({ priorityPos, stage }: CellKey): string {
-  return `${priorityPos}:${stage}`;
+export function targetKey(target: RealtimeTarget): string {
+  if (target.kind === "cell") {
+    return `cell:${target.priorityPos}:${target.stage}`;
+  }
+  return `title:${target.position}`;
 }
 
-export function parseCellKey(key: string): CellKey | null {
+export function parseTargetKey(key: string): RealtimeTarget | null {
   const parts = key.split(":");
-  if (parts.length !== 2) return null;
-  const pos = Number(parts[0]);
-  if (!Number.isInteger(pos) || pos < 1 || pos > 5) return null;
-  const stage = parts[1];
-  if (!stage) return null;
-  if (
-    stage !== "rdv_initial" &&
-    stage !== "rdv_inter" &&
-    stage !== "rdv_final" &&
-    stage !== "plan_action"
-  ) {
-    return null;
+  if (parts[0] === "cell" && parts.length === 3) {
+    const pos = Number(parts[1]);
+    const stage = parts[2];
+    if (!Number.isInteger(pos) || pos < 1 || pos > 5) return null;
+    if (
+      stage !== "rdv_initial" &&
+      stage !== "rdv_inter" &&
+      stage !== "rdv_final" &&
+      stage !== "plan_action"
+    ) {
+      return null;
+    }
+    return { kind: "cell", priorityPos: pos, stage: stage as TandemStage };
   }
-  return { priorityPos: pos, stage };
-}
-
-export function subscribeToTandemChannel(
-  client: SupabaseClient<Database>,
-  tandemPairId: string,
-  handlers: {
-    onEvent?: (event: RealtimeCellEvent) => void;
-    onPresenceSync?: (state: Record<string, unknown>) => void;
+  if (parts[0] === "title" && parts.length === 2) {
+    const pos = Number(parts[1]);
+    if (!Number.isInteger(pos) || pos < 1 || pos > 5) return null;
+    return { kind: "priority_title", position: pos };
   }
-) {
-  const channel = client.channel(tandemChannelName(tandemPairId), {
-    config: { broadcast: { self: false }, presence: { key: "user" } },
-  });
-
-  channel.on("broadcast", { event: "cell" }, (payload) => {
-    handlers.onEvent?.(payload.payload as RealtimeCellEvent);
-  });
-
-  if (handlers.onPresenceSync) {
-    channel.on("presence", { event: "sync" }, () => {
-      handlers.onPresenceSync?.(channel.presenceState());
-    });
-  }
-
-  return channel;
+  return null;
 }
