@@ -10,17 +10,49 @@ import {
 } from "./TandemRealtimeProvider";
 import type { RealtimeTarget } from "@/types/tandem";
 
-export function PriorityHeaderCell({
-  pairId,
-  position,
-  initialTitle,
-  editable,
-}: {
+type Props = {
   pairId: string;
   position: number;
   initialTitle: string;
   editable: boolean;
+};
+
+export function PriorityHeaderCell(props: Props) {
+  if (!props.editable) {
+    return (
+      <PriorityHeaderDisplay
+        position={props.position}
+        title={props.initialTitle}
+      />
+    );
+  }
+  return <PriorityHeaderEditor {...props} />;
+}
+
+function PriorityHeaderDisplay({
+  position,
+  title,
+}: {
+  position: number;
+  title: string;
 }) {
+  return (
+    <div
+      className={cn(
+        "rounded-md border p-2 text-sm font-medium",
+        title ? "bg-primary/5 text-foreground" : "bg-muted/40 text-muted-foreground"
+      )}
+    >
+      {title || `Priorité ${position} — non définie`}
+    </div>
+  );
+}
+
+function PriorityHeaderEditor({
+  pairId,
+  position,
+  initialTitle,
+}: Props) {
   const router = useRouter();
   const realtime = useTandemRealtime();
   const target = useMemo<RealtimeTarget>(
@@ -98,19 +130,6 @@ export function PriorityHeaderCell({
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
-
-  if (!editable) {
-    return (
-      <div
-        className={cn(
-          "rounded-md border p-2 text-sm font-medium",
-          value ? "bg-primary/5 text-foreground" : "bg-muted/40 text-muted-foreground"
-        )}
-      >
-        {value || `Priorité ${position} — non définie`}
-      </div>
-    );
-  }
 
   const isLockedByOther = Boolean(lock);
 

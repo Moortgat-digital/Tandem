@@ -12,15 +12,7 @@ import type { RealtimeTarget, TandemStage } from "@/types/tandem";
 
 type SaveStatus = "idle" | "dirty" | "saving" | "saved" | "error";
 
-export function CellEditor({
-  pairId,
-  priorityPos,
-  stage,
-  initialValue,
-  editable,
-  placeholder,
-  onSaved,
-}: {
+type CellEditorProps = {
   pairId: string;
   priorityPos: number;
   stage: TandemStage;
@@ -28,7 +20,47 @@ export function CellEditor({
   editable: boolean;
   placeholder?: string;
   onSaved?: () => void;
+};
+
+export function CellEditor(props: CellEditorProps) {
+  if (!props.editable) {
+    return (
+      <CellDisplay
+        value={props.initialValue}
+        placeholder={props.placeholder}
+      />
+    );
+  }
+  return <CellEditorActive {...props} />;
+}
+
+function CellDisplay({
+  value,
+  placeholder,
+}: {
+  value: string;
+  placeholder?: string;
 }) {
+  return (
+    <div
+      className={cn(
+        "min-h-[80px] whitespace-pre-wrap rounded-md border border-dashed bg-muted/30 p-2 text-sm",
+        value ? "text-foreground" : "text-muted-foreground"
+      )}
+    >
+      {value || placeholder || "—"}
+    </div>
+  );
+}
+
+function CellEditorActive({
+  pairId,
+  priorityPos,
+  stage,
+  initialValue,
+  placeholder,
+  onSaved,
+}: CellEditorProps) {
   const router = useRouter();
   const realtime = useTandemRealtime();
   const target = useMemo<RealtimeTarget>(
@@ -52,8 +84,6 @@ export function CellEditor({
     initialRef.current = initialValue;
   }, [initialValue]);
 
-  // Reçoit les updates de contenu de l'autre côté (après leur save).
-  // On ne patch pas si l'utilisateur est en train d'écrire ici.
   useEffect(() => {
     return realtime.registerContentListener(target, (content) => {
       if (isFocusedRef.current) return;
@@ -63,8 +93,6 @@ export function CellEditor({
     });
   }, [realtime, target]);
 
-  // Si l'autre côté prend la cellule alors qu'on tape (tie-break userId), on
-  // cède : on flush la sauvegarde puis on blur l'input.
   useEffect(() => {
     return realtime.registerForceBlur(target, () => {
       if (textareaRef.current) textareaRef.current.blur();
@@ -119,19 +147,6 @@ export function CellEditor({
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
-
-  if (!editable) {
-    return (
-      <div
-        className={cn(
-          "min-h-[80px] whitespace-pre-wrap rounded-md border border-dashed bg-muted/30 p-2 text-sm",
-          value ? "text-foreground" : "text-muted-foreground"
-        )}
-      >
-        {value || placeholder || "—"}
-      </div>
-    );
-  }
 
   const isLockedByOther = Boolean(lock);
 
