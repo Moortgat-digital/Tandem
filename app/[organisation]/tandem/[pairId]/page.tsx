@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getOrganisationBySlug } from "@/lib/organisation";
 import { Badge } from "@/components/ui/badge";
@@ -139,6 +140,13 @@ export default async function TandemPage({
               {statusLabel(status)}
             </Badge>
             <PresenceBadge />
+            <a
+              href={`/api/tandems/${pair.id}/export`}
+              className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Exporter en PDF
+            </a>
           </div>
         </header>
 

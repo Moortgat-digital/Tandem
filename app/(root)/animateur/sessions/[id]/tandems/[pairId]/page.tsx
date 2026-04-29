@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { TandemGrid } from "@/components/tandem/TandemGrid";
@@ -116,9 +117,18 @@ export default async function AnimateurTandemReadOnlyPage({
             {manager.first_name} {manager.last_name}
           </h1>
         </div>
-        <Badge variant={isCompleted ? "success" : "secondary"}>
-          {statusLabel(realStatus)}
-        </Badge>
+        <div className="flex flex-col items-end gap-2">
+          <Badge variant={isCompleted ? "success" : "secondary"}>
+            {statusLabel(realStatus)}
+          </Badge>
+          <a
+            href={`/api/tandems/${pair.id}/export`}
+            className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Exporter en PDF
+          </a>
+        </div>
       </header>
 
       <div className="mb-4 rounded-md border bg-amber-50 p-3 text-sm text-amber-900">
