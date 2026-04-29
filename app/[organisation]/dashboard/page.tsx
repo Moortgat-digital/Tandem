@@ -37,13 +37,6 @@ export default async function OrganisationDashboardPage({
 
   const allPairs = [...(pairsAsParticipant ?? []), ...(pairsAsManager ?? [])];
 
-  // Cas le plus fréquent : un seul Tandem (le sien). On saute la page de
-  // liste et on ouvre directement le doc — la liste n'est utile que pour
-  // les double-rôles N/N+1 ou quand plusieurs sessions cohabitent.
-  if (allPairs.length === 1 && allPairs[0]) {
-    redirect(`/${slug}/tandem/${allPairs[0].id}`);
-  }
-
   // Charge les profils et sessions liés
   const otherUserIds = Array.from(
     new Set(
@@ -173,6 +166,52 @@ export default async function OrganisationDashboardPage({
           </ul>
         </section>
       ) : null}
+
+      <section className="mt-12 border-t pt-8">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          À propos de Tandem
+        </h2>
+        <p className="mb-6 text-sm text-muted-foreground">
+          Tandem est l&apos;outil collaboratif de suivi de votre parcours de formation
+          Moortgat. Vous y remplissez à deux — collaborateur et manager — un compte
+          rendu structuré à chaque RDV clé.
+        </p>
+        <div className="grid gap-4 md:grid-cols-3">
+          <article className="rounded-lg border bg-card p-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+              Caractéristiques
+            </p>
+            <ul className="space-y-1.5 text-sm">
+              <li>Compte rendu structuré en priorités personnalisables</li>
+              <li>Trois étapes : RDV initial, intermédiaire, final</li>
+              <li>Édition simultanée à deux, en temps réel</li>
+              <li>Validation conjointe à chaque étape</li>
+            </ul>
+          </article>
+          <article className="rounded-lg border bg-card p-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+              Avantages
+            </p>
+            <ul className="space-y-1.5 text-sm">
+              <li>Plus de fichiers Word qui circulent par mail</li>
+              <li>Une seule version, toujours à jour</li>
+              <li>Données hébergées en Europe, accès limité au binôme</li>
+              <li>Historique des validations conservé automatiquement</li>
+            </ul>
+          </article>
+          <article className="rounded-lg border bg-card p-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+              Bénéfices
+            </p>
+            <ul className="space-y-1.5 text-sm">
+              <li>Un cap clair sur chaque priorité de progression</li>
+              <li>Un fil rouge entre les RDVs, sans rien perdre</li>
+              <li>Un plan d&apos;action concret à la fin du parcours</li>
+              <li>Un appui durable à votre développement professionnel</li>
+            </ul>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }
