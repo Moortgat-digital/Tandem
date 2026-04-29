@@ -225,7 +225,9 @@ export function TandemGrid({
                       : stage === "plan_action"
                         ? stageEditable
                           ? "Actions concrètes à mettre en place…"
-                          : "Disponible au RDV final"
+                          : status === "completed"
+                            ? undefined
+                            : "Disponible au RDV final"
                         : "Observations factuelles…";
                   return (
                     <td
