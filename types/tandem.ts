@@ -59,7 +59,13 @@ export type UserContext =
  * le titre d'une colonne de priorité.
  */
 export type RealtimeTarget =
-  | { kind: "cell"; priorityPos: number; stage: TandemStage }
+  | {
+      kind: "cell";
+      priorityPos: number;
+      stage: TandemStage;
+      /** 0 pour tous les stages sauf rdv_inter (1, 2 ou 3). */
+      interIndex: number;
+    }
   | { kind: "priority_title"; position: number }
   | { kind: "priority_kpi"; position: number }
   | { kind: "attentes_participant" }

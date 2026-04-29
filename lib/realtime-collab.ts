@@ -14,7 +14,7 @@ export function tandemChannelName(tandemPairId: string): string {
 export function targetKey(target: RealtimeTarget): string {
   switch (target.kind) {
     case "cell":
-      return `cell:${target.priorityPos}:${target.stage}`;
+      return `cell:${target.priorityPos}:${target.stage}:${target.interIndex}`;
     case "priority_title":
       return `title:${target.position}`;
     case "priority_kpi":
@@ -30,9 +30,10 @@ export function parseTargetKey(key: string): RealtimeTarget | null {
   if (key === "attentes_participant") return { kind: "attentes_participant" };
   if (key === "attentes_manager") return { kind: "attentes_manager" };
   const parts = key.split(":");
-  if (parts[0] === "cell" && parts.length === 3) {
+  if (parts[0] === "cell" && parts.length === 4) {
     const pos = Number(parts[1]);
     const stage = parts[2];
+    const interIndex = Number(parts[3]);
     if (!Number.isInteger(pos) || pos < 1 || pos > 5) return null;
     if (
       stage !== "rdv_initial" &&
@@ -42,7 +43,15 @@ export function parseTargetKey(key: string): RealtimeTarget | null {
     ) {
       return null;
     }
-    return { kind: "cell", priorityPos: pos, stage: stage as TandemStage };
+    if (!Number.isInteger(interIndex) || interIndex < 0 || interIndex > 3) {
+      return null;
+    }
+    return {
+      kind: "cell",
+      priorityPos: pos,
+      stage: stage as TandemStage,
+      interIndex,
+    };
   }
   if (parts[0] === "title" && parts.length === 2) {
     const pos = Number(parts[1]);

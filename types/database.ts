@@ -365,6 +365,7 @@ export type Database = {
           content: string | null
           document_id: string
           id: string
+          inter_index: number
           is_locked: boolean | null
           priority_pos: number
           stage: string
@@ -375,6 +376,7 @@ export type Database = {
           content?: string | null
           document_id: string
           id?: string
+          inter_index?: number
           is_locked?: boolean | null
           priority_pos: number
           stage: string
@@ -385,6 +387,7 @@ export type Database = {
           content?: string | null
           document_id?: string
           id?: string
+          inter_index?: number
           is_locked?: boolean | null
           priority_pos?: number
           stage?: string
@@ -474,6 +477,7 @@ export type Database = {
       tandem_validations: {
         Row: {
           id: string
+          inter_index: number
           stage: string
           tandem_pair_id: string
           validated_at: string | null
@@ -481,6 +485,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          inter_index?: number
           stage: string
           tandem_pair_id: string
           validated_at?: string | null
@@ -488,6 +493,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          inter_index?: number
           stage?: string
           tandem_pair_id?: string
           validated_at?: string | null

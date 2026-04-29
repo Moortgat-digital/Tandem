@@ -6,16 +6,29 @@ import { editableStages, openNextStage } from "@/lib/tandem-workflow";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { TandemStage, TandemStatus } from "@/types/tandem";
 
-const Schema = z.object({
-  priority_pos: z.number().int().min(1).max(5),
-  stage: z.enum(["rdv_initial", "rdv_inter", "rdv_final", "plan_action"]),
-  content: z.string().max(10_000),
-});
+const Schema = z
+  .object({
+    priority_pos: z.number().int().min(1).max(5),
+    stage: z.enum(["rdv_initial", "rdv_inter", "rdv_final", "plan_action"]),
+    content: z.string().max(10_000),
+    inter_index: z.number().int().min(1).max(3).optional(),
+  })
+  .refine(
+    (v) => (v.stage === "rdv_inter" ? v.inter_index !== undefined : true),
+    { message: "inter_index requis pour stage='rdv_inter'" }
+  )
+  .refine(
+    (v) => (v.stage !== "rdv_inter" ? v.inter_index === undefined : true),
+    { message: "inter_index interdit hors stage='rdv_inter'" }
+  );
 
 /**
  * Upsert du contenu d'une cellule.
- * - Refuse si la cellule n'est pas éditable au statut courant.
- * - À la première édition d'une étape validated_X, on passe en in_progress_Y.
+ * - Refuse si l'étape n'est pas éditable au statut courant.
+ * - Pour rdv_inter, refuse si l'inter_index ciblé n'est pas le prochain
+ *   à remplir (= nb_validations_inter + 1).
+ * - À la première édition d'un statut "validated_X", on bascule en
+ *   "in_progress_Y" en fonction de l'étape éditée.
  */
 export async function PUT(
   request: Request,
@@ -46,7 +59,6 @@ export async function PUT(
   const supabase = await createClient();
   const admin = createAdminClient();
 
-  // Vérifie que la priorité existe (pas d'édition sur colonne vide)
   const { data: doc } = await supabase
     .from("tandem_documents")
     .select("id")
@@ -67,13 +79,33 @@ export async function PUT(
     );
   }
 
-  // Ouvre l'étape suivante si on était dans un statut "validated_X"
-  const nextStatus = openNextStage(currentStatus);
+  // Pour rdv_inter, vérifie que l'inter_index ciblé est ouvert :
+  // c'est l'occurrence en cours (= nb validations inter + 1).
+  if (parsed.data.stage === "rdv_inter") {
+    const { count: validatedInterCount } = await supabase
+      .from("tandem_validations")
+      .select("id", { count: "exact", head: true })
+      .eq("tandem_pair_id", pairId)
+      .eq("stage", "rdv_inter");
+    const openInterIndex = (validatedInterCount ?? 0) + 1;
+    if (parsed.data.inter_index !== openInterIndex) {
+      return NextResponse.json(
+        {
+          error: `Cet RDV intermédiaire n'est pas ouvert (en cours : N°${openInterIndex})`,
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  const nextStatus = openNextStage(currentStatus, parsed.data.stage);
   if (nextStatus !== currentStatus) {
     await admin.from("tandem_pairs").update({ tandem_status: nextStatus }).eq("id", pairId);
   }
 
-  // Upsert entry
+  const interIndex =
+    parsed.data.stage === "rdv_inter" ? (parsed.data.inter_index ?? 0) : 0;
+
   const { data, error } = await supabase
     .from("tandem_entries")
     .upsert(
@@ -81,11 +113,12 @@ export async function PUT(
         document_id: doc.id,
         priority_pos: parsed.data.priority_pos,
         stage: parsed.data.stage,
+        inter_index: interIndex,
         content: parsed.data.content,
         updated_by: auth.access.userId,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "document_id,priority_pos,stage" }
+      { onConflict: "document_id,priority_pos,stage,inter_index" }
     )
     .select()
     .single();

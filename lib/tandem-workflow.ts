@@ -3,13 +3,18 @@ import type { TandemStage, TandemStatus, ValidatableStage } from "@/types/tandem
 /**
  * Liste des étapes saisissables (cellules éditables) pour un statut donné.
  * - RDV initial : rdv_initial
- * - RDV intermédiaire : rdv_inter
+ * - RDV intermédiaire : rdv_inter (par occurrence — voir la grille pour le
+ *   verrouillage par inter_index)
  * - RDV final : rdv_final ET plan_action (remplis ensemble au dernier RDV)
  *
  * Les statuts "validated_X" autorisent la saisie de l'étape suivante : la
  * première frappe basculera automatiquement le statut en "in_progress_Y"
  * via openNextStage(). C'est ce qui permet à un binôme de démarrer le
  * prochain RDV sans bouton supplémentaire "Ouvrir l'étape suivante".
+ *
+ * Cas particulier `validated_inter` : on autorise À LA FOIS rdv_inter (pour
+ * démarrer le prochain inter, jusqu'à 3) ET rdv_final/plan_action (pour
+ * passer directement au final). Le binôme choisit en saisissant.
  */
 export function editableStages(status: TandemStatus): TandemStage[] {
   switch (status) {
@@ -20,6 +25,7 @@ export function editableStages(status: TandemStatus): TandemStage[] {
     case "in_progress_rdv_inter":
       return ["rdv_inter"];
     case "validated_inter":
+      return ["rdv_inter", "rdv_final", "plan_action"];
     case "in_progress_rdv_final":
       return ["rdv_final", "plan_action"];
     default:
@@ -28,16 +34,18 @@ export function editableStages(status: TandemStatus): TandemStage[] {
 }
 
 /**
- * Étapes visibles (éditables + lecture seule). Les étapes futures sont masquées.
+ * Étapes visibles (éditables + lecture seule). Le Plan d'action est toujours
+ * affiché — quand il n'est pas encore éditable, la grille affiche un message
+ * « Disponible au RDV final » à la place du contenu.
  */
 export function visibleStages(status: TandemStatus): TandemStage[] {
   switch (status) {
     case "not_started":
     case "in_progress_rdv_initial":
-      return ["rdv_initial"];
+      return ["rdv_initial", "plan_action"];
     case "validated_1":
     case "in_progress_rdv_inter":
-      return ["rdv_initial", "rdv_inter"];
+      return ["rdv_initial", "rdv_inter", "plan_action"];
     case "validated_inter":
     case "in_progress_rdv_final":
     case "completed":
@@ -48,19 +56,22 @@ export function visibleStages(status: TandemStatus): TandemStage[] {
 /**
  * Statut → étape courante saisissable principale (ou null si terminé).
  * Utile pour afficher "Étape en cours : RDV intermédiaire" par ex.
+ *
+ * Les statuts `validated_X` ne renvoient PAS d'étape courante : tant que
+ * personne n'a tapé un caractère dans la prochaine étape, il n'y a rien à
+ * valider. La page peut afficher un message « Démarre la saisie pour ouvrir
+ * la prochaine étape » à la place du bouton.
  */
 export function currentEditableStage(status: TandemStatus): ValidatableStage | null {
   switch (status) {
     case "not_started":
     case "in_progress_rdv_initial":
       return "rdv_initial";
-    case "validated_1":
     case "in_progress_rdv_inter":
-    case "validated_inter":
       return "rdv_inter";
     case "in_progress_rdv_final":
       return "rdv_final";
-    case "completed":
+    default:
       return null;
   }
 }
@@ -80,7 +91,13 @@ export function nextStatusOnValidate(
     return null;
   }
   if (stage === "rdv_inter") {
-    if (current === "validated_1" || current === "in_progress_rdv_inter") {
+    // Les RDV intermédiaires sont répétables (jusqu'à 3) : on peut valider
+    // un nouvel inter depuis l'état validated_inter aussi (occurrence > 1).
+    if (
+      current === "validated_1" ||
+      current === "in_progress_rdv_inter" ||
+      current === "validated_inter"
+    ) {
       return "validated_inter";
     }
     return null;
@@ -95,21 +112,34 @@ export function nextStatusOnValidate(
 }
 
 /**
- * Ouvre l'étape suivante (passe de "validated_X" à "in_progress_Y") quand le
- * premier des deux utilisateurs commence à saisir la suite.
- * Appelé implicitement à la première édition après une validation.
+ * Ouvre l'étape suivante quand un utilisateur commence à saisir.
+ * Le résultat dépend de l'étape éditée :
+ *  - Saisie dans rdv_inter alors que `validated_1` ou `validated_inter`
+ *    → on bascule en `in_progress_rdv_inter` (démarrage d'un nouvel inter)
+ *  - Saisie dans rdv_final / plan_action depuis `validated_inter`
+ *    → on bascule en `in_progress_rdv_final`
+ *  - Saisie dans rdv_initial depuis `not_started` → `in_progress_rdv_initial`
  */
-export function openNextStage(current: TandemStatus): TandemStatus {
-  switch (current) {
-    case "not_started":
-      return "in_progress_rdv_initial";
-    case "validated_1":
-      return "in_progress_rdv_inter";
-    case "validated_inter":
-      return "in_progress_rdv_final";
-    default:
-      return current;
+export function openNextStage(
+  current: TandemStatus,
+  editedStage: TandemStage
+): TandemStatus {
+  if (editedStage === "rdv_initial") {
+    return current === "not_started" ? "in_progress_rdv_initial" : current;
   }
+  if (editedStage === "rdv_inter") {
+    if (current === "validated_1" || current === "validated_inter") {
+      return "in_progress_rdv_inter";
+    }
+    return current;
+  }
+  if (editedStage === "rdv_final" || editedStage === "plan_action") {
+    if (current === "validated_inter") {
+      return "in_progress_rdv_final";
+    }
+    return current;
+  }
+  return current;
 }
 
 /**

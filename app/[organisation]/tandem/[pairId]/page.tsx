@@ -77,17 +77,23 @@ export default async function TandemPage({
 
   if (!document || !participant || !manager || !session) notFound();
 
-  const [{ data: priorities }, { data: entries }] = await Promise.all([
-    supabase
-      .from("tandem_priorities")
-      .select("position, title, kpi")
-      .eq("document_id", document.id)
-      .order("position"),
-    supabase
-      .from("tandem_entries")
-      .select("priority_pos, stage, content, is_locked")
-      .eq("document_id", document.id),
-  ]);
+  const [{ data: priorities }, { data: entries }, { count: nbValidatedInter }] =
+    await Promise.all([
+      supabase
+        .from("tandem_priorities")
+        .select("position, title, kpi")
+        .eq("document_id", document.id)
+        .order("position"),
+      supabase
+        .from("tandem_entries")
+        .select("priority_pos, stage, inter_index, content, is_locked")
+        .eq("document_id", document.id),
+      supabase
+        .from("tandem_validations")
+        .select("id", { count: "exact", head: true })
+        .eq("tandem_pair_id", pair.id)
+        .eq("stage", "rdv_inter"),
+    ]);
 
   const status = pair.tandem_status as TandemStatus;
   const currentStage = currentEditableStage(status);
@@ -95,6 +101,9 @@ export default async function TandemPage({
     pair.participant_id === user.id ? "participant" : "manager";
   const isCompleted = status === "completed";
   const hasPriority = (priorities ?? []).some((p) => p.title.trim().length > 0);
+  const interDates = document.dates_rdv_inter ?? [];
+  const interValidatedCount = nbValidatedInter ?? 0;
+  const openInterIndex = interValidatedCount + 1;
 
   const meFirstName =
     role === "participant" ? participant.first_name : manager.first_name;
@@ -167,9 +176,12 @@ export default async function TandemPage({
           entries={(entries ?? []).map((e) => ({
             priority_pos: e.priority_pos,
             stage: e.stage as TandemStage,
+            inter_index: e.inter_index,
             content: e.content,
             is_locked: e.is_locked,
           }))}
+          interDates={interDates}
+          nbValidatedInter={interValidatedCount}
         />
 
         {currentStage ? (
@@ -178,13 +190,21 @@ export default async function TandemPage({
               <div>
                 <p className="text-sm font-medium">Valider ce compte rendu</p>
                 <p className="text-xs text-muted-foreground">
-                  Étape en cours : <strong>{stageLabel(currentStage)}</strong>.
-                  N ou N+1 peut valider ; la validation verrouille cette étape en lecture seule.
+                  Étape en cours :{" "}
+                  <strong>
+                    {stageLabel(currentStage)}
+                    {currentStage === "rdv_inter" ? ` N°${openInterIndex}` : ""}
+                  </strong>
+                  . N ou N+1 peut valider ; la validation verrouille cette étape
+                  en lecture seule.
                 </p>
               </div>
               <ValidateStageButton
                 pairId={pair.id}
                 stage={currentStage}
+                interIndex={
+                  currentStage === "rdv_inter" ? openInterIndex : undefined
+                }
                 disabled={!hasPriority}
                 hint={
                   !hasPriority
@@ -194,9 +214,16 @@ export default async function TandemPage({
               />
             </div>
           </section>
-        ) : (
+        ) : status === "completed" ? (
           <section className="rounded-lg border bg-muted/30 p-4">
             <p className="text-sm">Parcours terminé — aucune édition supplémentaire.</p>
+          </section>
+        ) : (
+          <section className="rounded-lg border bg-muted/30 p-4">
+            <p className="text-sm">
+              Démarre la saisie dans les cellules de la prochaine étape pour
+              l&apos;ouvrir. Le bouton de validation apparaîtra ensuite.
+            </p>
           </section>
         )}
         </div>

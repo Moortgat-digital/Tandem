@@ -76,17 +76,23 @@ export default async function AnimateurTandemReadOnlyPage({
 
   if (!document || !participant || !manager || !session) notFound();
 
-  const [{ data: priorities }, { data: entries }] = await Promise.all([
-    supabase
-      .from("tandem_priorities")
-      .select("position, title, kpi")
-      .eq("document_id", document.id)
-      .order("position"),
-    supabase
-      .from("tandem_entries")
-      .select("priority_pos, stage, content, is_locked")
-      .eq("document_id", document.id),
-  ]);
+  const [{ data: priorities }, { data: entries }, { count: nbValidatedInter }] =
+    await Promise.all([
+      supabase
+        .from("tandem_priorities")
+        .select("position, title, kpi")
+        .eq("document_id", document.id)
+        .order("position"),
+      supabase
+        .from("tandem_entries")
+        .select("priority_pos, stage, inter_index, content, is_locked")
+        .eq("document_id", document.id),
+      supabase
+        .from("tandem_validations")
+        .select("id", { count: "exact", head: true })
+        .eq("tandem_pair_id", pair.id)
+        .eq("stage", "rdv_inter"),
+    ]);
 
   const realStatus = pair.tandem_status as TandemStatus;
   const isCompleted = realStatus === "completed";
@@ -158,7 +164,7 @@ export default async function AnimateurTandemReadOnlyPage({
           canEditManager={false}
         />
 
-        {/* status='completed' force editable=[] et visibleStages=4 lignes ;
+        {/* status='completed' force editable=[] et visibleStages=toutes les lignes ;
             kpiEditable=false met aussi les KPI en lecture seule. */}
         <TandemGrid
           pairId={pair.id}
@@ -172,9 +178,12 @@ export default async function AnimateurTandemReadOnlyPage({
           entries={(entries ?? []).map((e) => ({
             priority_pos: e.priority_pos,
             stage: e.stage as TandemStage,
+            inter_index: e.inter_index,
             content: e.content,
             is_locked: e.is_locked,
           }))}
+          interDates={document.dates_rdv_inter ?? []}
+          nbValidatedInter={nbValidatedInter ?? 0}
           kpiEditable={false}
         />
       </div>

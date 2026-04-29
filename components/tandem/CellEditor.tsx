@@ -16,6 +16,8 @@ type CellEditorProps = {
   pairId: string;
   priorityPos: number;
   stage: TandemStage;
+  /** 0 pour tous les stages sauf rdv_inter (1, 2 ou 3). */
+  interIndex: number;
   initialValue: string;
   editable: boolean;
   placeholder?: string;
@@ -57,6 +59,7 @@ function CellEditorActive({
   pairId,
   priorityPos,
   stage,
+  interIndex,
   initialValue,
   placeholder,
   onSaved,
@@ -64,8 +67,8 @@ function CellEditorActive({
   const router = useRouter();
   const realtime = useTandemRealtime();
   const target = useMemo<RealtimeTarget>(
-    () => ({ kind: "cell", priorityPos, stage }),
-    [priorityPos, stage]
+    () => ({ kind: "cell", priorityPos, stage, interIndex }),
+    [priorityPos, stage, interIndex]
   );
   const lock = useTargetLock(target);
 
@@ -105,7 +108,12 @@ function CellEditorActive({
       const res = await fetch(`/api/tandems/${pairId}/entries`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ priority_pos: priorityPos, stage, content }),
+        body: JSON.stringify({
+          priority_pos: priorityPos,
+          stage,
+          content,
+          ...(stage === "rdv_inter" ? { inter_index: interIndex } : {}),
+        }),
       });
       if (!res.ok) {
         setStatus("error");
@@ -120,7 +128,7 @@ function CellEditorActive({
         router.refresh();
       }
     },
-    [pairId, priorityPos, stage, onSaved, router, realtime, target]
+    [pairId, priorityPos, stage, interIndex, onSaved, router, realtime, target]
   );
 
   function scheduleSave(nextValue: string) {

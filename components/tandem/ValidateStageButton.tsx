@@ -17,11 +17,14 @@ import { stageLabel } from "@/lib/tandem-workflow";
 export function ValidateStageButton({
   pairId,
   stage,
+  interIndex,
   disabled = false,
   hint,
 }: {
   pairId: string;
   stage: ValidatableStage;
+  /** Requis si stage = 'rdv_inter'. */
+  interIndex?: number;
   disabled?: boolean;
   hint?: string;
 }) {
@@ -36,7 +39,10 @@ export function ValidateStageButton({
     const res = await fetch(`/api/tandems/${pairId}/validate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ stage }),
+      body: JSON.stringify({
+        stage,
+        ...(stage === "rdv_inter" ? { inter_index: interIndex } : {}),
+      }),
     });
     setPending(false);
     if (!res.ok) {
@@ -48,6 +54,11 @@ export function ValidateStageButton({
     router.refresh();
   }
 
+  const label =
+    stage === "rdv_inter" && interIndex
+      ? `${stageLabel(stage)} N°${interIndex}`
+      : stageLabel(stage);
+
   return (
     <>
       <Button onClick={() => setOpen(true)} disabled={disabled}>
@@ -58,7 +69,7 @@ export function ValidateStageButton({
           <DialogHeader>
             <DialogTitle>Valider l&apos;étape</DialogTitle>
             <DialogDescription>
-              Tu valides : <strong>{stageLabel(stage)}</strong>. Cette étape sera verrouillée
+              Tu valides : <strong>{label}</strong>. Cette étape sera verrouillée
               en lecture seule. N et N+1 partagent cette validation — le premier arrivé
               l&apos;enclenche.
               {hint ? <span className="mt-2 block">{hint}</span> : null}
