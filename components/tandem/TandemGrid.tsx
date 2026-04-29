@@ -3,10 +3,11 @@
 import { useMemo } from "react";
 import { CellEditor } from "./CellEditor";
 import { PriorityHeaderCell } from "./PriorityHeaderCell";
+import { PriorityKpiCell } from "./PriorityKpiCell";
 import { editableStages, stageLabel, visibleStages } from "@/lib/tandem-workflow";
 import type { TandemStage, TandemStatus } from "@/types/tandem";
 
-type PriorityDto = { position: number; title: string };
+type PriorityDto = { position: number; title: string; kpi: string | null };
 type EntryDto = {
   priority_pos: number;
   stage: TandemStage;
@@ -20,19 +21,25 @@ export function TandemGrid({
   nbPrioritesMax,
   priorities,
   entries,
+  kpiEditable = true,
 }: {
   pairId: string;
   status: TandemStatus;
   nbPrioritesMax: number;
   priorities: PriorityDto[];
   entries: EntryDto[];
+  /**
+   * Le KPI peut rester éditable même quand toute la grille est figée
+   * (animateur en lecture seule fait sauter ce flag à false).
+   */
+  kpiEditable?: boolean;
 }) {
   const editable = useMemo(() => editableStages(status), [status]);
   const visible = useMemo(() => visibleStages(status), [status]);
 
   const columns = Array.from({ length: nbPrioritesMax }, (_, i) => i + 1);
 
-  const priorityByPos = new Map(priorities.map((p) => [p.position, p.title]));
+  const priorityByPos = new Map(priorities.map((p) => [p.position, p]));
   const entryByKey = new Map(
     entries.map((e) => [`${e.priority_pos}:${e.stage}`, e])
   );
@@ -55,7 +62,7 @@ export function TandemGrid({
                 <PriorityHeaderCell
                   pairId={pairId}
                   position={pos}
-                  initialTitle={priorityByPos.get(pos) ?? ""}
+                  initialTitle={priorityByPos.get(pos)?.title ?? ""}
                   editable={rdvInitialEditable}
                 />
               </th>
@@ -63,6 +70,34 @@ export function TandemGrid({
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <td className="sticky left-0 z-10 border-b bg-muted/20 p-3 align-top text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              KPI
+              <p className="mt-1 text-[10px] font-normal normal-case text-muted-foreground">
+                Comment mesurer l&apos;évolution
+              </p>
+            </td>
+            {columns.map((pos) => {
+              const priority = priorityByPos.get(pos);
+              const hasTitle = (priority?.title ?? "").trim().length > 0;
+              return (
+                <td key={pos} className="border-b border-l p-2 align-top">
+                  {hasTitle ? (
+                    <PriorityKpiCell
+                      pairId={pairId}
+                      position={pos}
+                      initialKpi={priority?.kpi ?? ""}
+                      editable={kpiEditable}
+                    />
+                  ) : (
+                    <div className="rounded-md border border-dashed bg-muted/30 p-2 text-xs text-muted-foreground">
+                      Colonne non définie
+                    </div>
+                  )}
+                </td>
+              );
+            })}
+          </tr>
           {visible.map((stage) => (
             <tr key={stage}>
               <td className="sticky left-0 z-10 border-b bg-muted/20 p-3 align-top text-sm font-medium">
@@ -74,7 +109,8 @@ export function TandemGrid({
                 ) : null}
               </td>
               {columns.map((pos) => {
-                const title = priorityByPos.get(pos) ?? "";
+                const priority = priorityByPos.get(pos);
+                const title = priority?.title ?? "";
                 const hasTitle = title.trim().length > 0;
                 const entry = entryByKey.get(`${pos}:${stage}`);
                 const isEditable =

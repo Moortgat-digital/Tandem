@@ -37,6 +37,13 @@ export default async function OrganisationDashboardPage({
 
   const allPairs = [...(pairsAsParticipant ?? []), ...(pairsAsManager ?? [])];
 
+  // Cas le plus fréquent : un seul Tandem (le sien). On saute la page de
+  // liste et on ouvre directement le doc — la liste n'est utile que pour
+  // les double-rôles N/N+1 ou quand plusieurs sessions cohabitent.
+  if (allPairs.length === 1 && allPairs[0]) {
+    redirect(`/${slug}/tandem/${allPairs[0].id}`);
+  }
+
   // Charge les profils et sessions liés
   const otherUserIds = Array.from(
     new Set(

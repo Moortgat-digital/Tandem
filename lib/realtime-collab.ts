@@ -12,13 +12,23 @@ export function tandemChannelName(tandemPairId: string): string {
 }
 
 export function targetKey(target: RealtimeTarget): string {
-  if (target.kind === "cell") {
-    return `cell:${target.priorityPos}:${target.stage}`;
+  switch (target.kind) {
+    case "cell":
+      return `cell:${target.priorityPos}:${target.stage}`;
+    case "priority_title":
+      return `title:${target.position}`;
+    case "priority_kpi":
+      return `kpi:${target.position}`;
+    case "attentes_participant":
+      return "attentes_participant";
+    case "attentes_manager":
+      return "attentes_manager";
   }
-  return `title:${target.position}`;
 }
 
 export function parseTargetKey(key: string): RealtimeTarget | null {
+  if (key === "attentes_participant") return { kind: "attentes_participant" };
+  if (key === "attentes_manager") return { kind: "attentes_manager" };
   const parts = key.split(":");
   if (parts[0] === "cell" && parts.length === 3) {
     const pos = Number(parts[1]);
@@ -38,6 +48,11 @@ export function parseTargetKey(key: string): RealtimeTarget | null {
     const pos = Number(parts[1]);
     if (!Number.isInteger(pos) || pos < 1 || pos > 5) return null;
     return { kind: "priority_title", position: pos };
+  }
+  if (parts[0] === "kpi" && parts.length === 2) {
+    const pos = Number(parts[1]);
+    if (!Number.isInteger(pos) || pos < 1 || pos > 5) return null;
+    return { kind: "priority_kpi", position: pos };
   }
   return null;
 }

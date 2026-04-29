@@ -5,6 +5,7 @@ import { getOrganisationBySlug } from "@/lib/organisation";
 import { Badge } from "@/components/ui/badge";
 import { TandemHeader } from "@/components/tandem/TandemHeader";
 import { TandemGrid } from "@/components/tandem/TandemGrid";
+import { TandemAttentes } from "@/components/tandem/TandemAttentes";
 import { ValidateStageButton } from "@/components/tandem/ValidateStageButton";
 import { TandemRealtimeProvider } from "@/components/tandem/TandemRealtimeProvider";
 import { PresenceBadge } from "@/components/tandem/PresenceBadge";
@@ -53,7 +54,7 @@ export default async function TandemPage({
     supabase
       .from("tandem_documents")
       .select(
-        "id, tandem_pair_id, date_premiere_journee, date_premier_rdv, dates_rdv_inter, date_dernier_rdv"
+        "id, tandem_pair_id, date_premiere_journee, date_premier_rdv, dates_rdv_inter, date_dernier_rdv, attentes_participant, attentes_manager"
       )
       .eq("tandem_pair_id", pair.id)
       .maybeSingle(),
@@ -79,7 +80,7 @@ export default async function TandemPage({
   const [{ data: priorities }, { data: entries }] = await Promise.all([
     supabase
       .from("tandem_priorities")
-      .select("position, title")
+      .select("position, title, kpi")
       .eq("document_id", document.id)
       .order("position"),
     supabase
@@ -97,6 +98,10 @@ export default async function TandemPage({
 
   const meFirstName =
     role === "participant" ? participant.first_name : manager.first_name;
+
+  // Les Attentes sont éditables uniquement pendant le RDV initial.
+  const attentesEditable =
+    status === "not_started" || status === "in_progress_rdv_initial";
 
   return (
     <TandemRealtimeProvider
@@ -142,11 +147,23 @@ export default async function TandemPage({
           }}
         />
 
+        <TandemAttentes
+          pairId={pair.id}
+          initialParticipant={document.attentes_participant ?? ""}
+          initialManager={document.attentes_manager ?? ""}
+          canEditParticipant={attentesEditable && role === "participant"}
+          canEditManager={attentesEditable && role === "manager"}
+        />
+
         <TandemGrid
           pairId={pair.id}
           status={status}
           nbPrioritesMax={session.nb_priorites_max ?? 5}
-          priorities={priorities ?? []}
+          priorities={(priorities ?? []).map((p) => ({
+            position: p.position,
+            title: p.title,
+            kpi: p.kpi ?? null,
+          }))}
           entries={(entries ?? []).map((e) => ({
             priority_pos: e.priority_pos,
             stage: e.stage as TandemStage,

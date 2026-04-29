@@ -318,6 +318,8 @@ export type Database = {
       }
       tandem_documents: {
         Row: {
+          attentes_manager: string | null
+          attentes_participant: string | null
           date_dernier_rdv: string | null
           date_premier_rdv: string | null
           date_premiere_journee: string | null
@@ -327,6 +329,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          attentes_manager?: string | null
+          attentes_participant?: string | null
           date_dernier_rdv?: string | null
           date_premier_rdv?: string | null
           date_premiere_journee?: string | null
@@ -336,6 +340,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          attentes_manager?: string | null
+          attentes_participant?: string | null
           date_dernier_rdv?: string | null
           date_premier_rdv?: string | null
           date_premiere_journee?: string | null
@@ -452,9 +458,9 @@ export type Database = {
         ]
       }
       tandem_priorities: {
-        Row: { document_id: string; id: string; position: number; title: string }
-        Insert: { document_id: string; id?: string; position: number; title: string }
-        Update: { document_id?: string; id?: string; position?: number; title?: string }
+        Row: { document_id: string; id: string; kpi: string | null; position: number; title: string }
+        Insert: { document_id: string; id?: string; kpi?: string | null; position: number; title: string }
+        Update: { document_id?: string; id?: string; kpi?: string | null; position?: number; title?: string }
         Relationships: [
           {
             foreignKeyName: "tandem_priorities_document_id_fkey"

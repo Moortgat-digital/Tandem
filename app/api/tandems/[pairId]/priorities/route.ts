@@ -3,15 +3,21 @@ import { z } from "zod";
 import { requireTandemPairAccess } from "@/lib/tandem-auth";
 import { createClient } from "@/lib/supabase/server";
 
-const UpsertSchema = z.object({
-  position: z.number().int().min(1).max(5),
-  title: z.string().min(1).max(200),
-});
+const UpsertSchema = z
+  .object({
+    position: z.number().int().min(1).max(5),
+    title: z.string().min(1).max(200).optional(),
+    kpi: z.union([z.string().max(2000), z.null()]).optional(),
+  })
+  .refine((v) => v.title !== undefined || v.kpi !== undefined, {
+    message: "title ou kpi requis",
+  });
 
 /**
- * Crée ou renomme la priorité (colonne) à la position donnée.
- * Pendant le RDV initial, les priorités sont définies. Elles sont conservées
- * ensuite en lecture seule.
+ * Upsert d'une priorité (colonne).
+ *  - title : créé pendant le RDV initial, conservé en lecture seule ensuite.
+ *  - kpi   : modifiable à tout moment par N ou N+1.
+ * Si la row n'existe pas encore, `title` doit être fourni (NOT NULL en BDD).
  */
 export async function PUT(
   request: Request,
@@ -41,20 +47,49 @@ export async function PUT(
     return NextResponse.json({ error: "document_not_found" }, { status: 404 });
   }
 
-  // Upsert by (document_id, position)
-  const { data, error } = await supabase
+  const { data: existing } = await supabase
     .from("tandem_priorities")
-    .upsert(
-      {
+    .select("id, title, kpi")
+    .eq("document_id", doc.id)
+    .eq("position", parsed.data.position)
+    .maybeSingle();
+
+  if (!existing) {
+    if (parsed.data.title === undefined) {
+      return NextResponse.json(
+        { error: "title_required_for_new_priority" },
+        { status: 400 }
+      );
+    }
+    const { data, error } = await supabase
+      .from("tandem_priorities")
+      .insert({
         document_id: doc.id,
         position: parsed.data.position,
         title: parsed.data.title,
-      },
-      { onConflict: "document_id,position" }
-    )
+        kpi: parsed.data.kpi ?? null,
+      })
+      .select()
+      .single();
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ priority: data });
+  }
+
+  const update: { title?: string; kpi?: string | null } = {};
+  if (parsed.data.title !== undefined) update.title = parsed.data.title;
+  if (parsed.data.kpi !== undefined) update.kpi = parsed.data.kpi;
+
+  const { data, error } = await supabase
+    .from("tandem_priorities")
+    .update(update)
+    .eq("id", existing.id)
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ priority: data });
 }

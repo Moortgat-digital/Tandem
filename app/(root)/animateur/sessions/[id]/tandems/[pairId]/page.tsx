@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { TandemGrid } from "@/components/tandem/TandemGrid";
+import { TandemAttentes } from "@/components/tandem/TandemAttentes";
 import { statusLabel } from "@/lib/tandem-workflow";
 import type { TandemStage, TandemStatus } from "@/types/tandem";
 
@@ -52,7 +53,7 @@ export default async function AnimateurTandemReadOnlyPage({
     supabase
       .from("tandem_documents")
       .select(
-        "id, tandem_pair_id, date_premiere_journee, date_premier_rdv, dates_rdv_inter, date_dernier_rdv"
+        "id, tandem_pair_id, date_premiere_journee, date_premier_rdv, dates_rdv_inter, date_dernier_rdv, attentes_participant, attentes_manager"
       )
       .eq("tandem_pair_id", pair.id)
       .maybeSingle(),
@@ -78,7 +79,7 @@ export default async function AnimateurTandemReadOnlyPage({
   const [{ data: priorities }, { data: entries }] = await Promise.all([
     supabase
       .from("tandem_priorities")
-      .select("position, title")
+      .select("position, title, kpi")
       .eq("document_id", document.id)
       .order("position"),
     supabase
@@ -149,18 +150,32 @@ export default async function AnimateurTandemReadOnlyPage({
           </div>
         </section>
 
-        {/* status='completed' force editable=[] et visibleStages=4 lignes */}
+        <TandemAttentes
+          pairId={pair.id}
+          initialParticipant={document.attentes_participant ?? ""}
+          initialManager={document.attentes_manager ?? ""}
+          canEditParticipant={false}
+          canEditManager={false}
+        />
+
+        {/* status='completed' force editable=[] et visibleStages=4 lignes ;
+            kpiEditable=false met aussi les KPI en lecture seule. */}
         <TandemGrid
           pairId={pair.id}
           status="completed"
           nbPrioritesMax={session.nb_priorites_max ?? 5}
-          priorities={priorities ?? []}
+          priorities={(priorities ?? []).map((p) => ({
+            position: p.position,
+            title: p.title,
+            kpi: p.kpi ?? null,
+          }))}
           entries={(entries ?? []).map((e) => ({
             priority_pos: e.priority_pos,
             stage: e.stage as TandemStage,
             content: e.content,
             is_locked: e.is_locked,
           }))}
+          kpiEditable={false}
         />
       </div>
     </main>

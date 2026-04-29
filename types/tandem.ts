@@ -60,7 +60,10 @@ export type UserContext =
  */
 export type RealtimeTarget =
   | { kind: "cell"; priorityPos: number; stage: TandemStage }
-  | { kind: "priority_title"; position: number };
+  | { kind: "priority_title"; position: number }
+  | { kind: "priority_kpi"; position: number }
+  | { kind: "attentes_participant" }
+  | { kind: "attentes_manager" };
 
 export type RealtimeCellEvent =
   | {
