@@ -5,14 +5,21 @@ import type { TandemStage, TandemStatus, ValidatableStage } from "@/types/tandem
  * - RDV initial : rdv_initial
  * - RDV intermédiaire : rdv_inter
  * - RDV final : rdv_final ET plan_action (remplis ensemble au dernier RDV)
+ *
+ * Les statuts "validated_X" autorisent la saisie de l'étape suivante : la
+ * première frappe basculera automatiquement le statut en "in_progress_Y"
+ * via openNextStage(). C'est ce qui permet à un binôme de démarrer le
+ * prochain RDV sans bouton supplémentaire "Ouvrir l'étape suivante".
  */
 export function editableStages(status: TandemStatus): TandemStage[] {
   switch (status) {
     case "not_started":
     case "in_progress_rdv_initial":
       return ["rdv_initial"];
+    case "validated_1":
     case "in_progress_rdv_inter":
       return ["rdv_inter"];
+    case "validated_inter":
     case "in_progress_rdv_final":
       return ["rdv_final", "plan_action"];
     default:
@@ -29,10 +36,9 @@ export function visibleStages(status: TandemStatus): TandemStage[] {
     case "in_progress_rdv_initial":
       return ["rdv_initial"];
     case "validated_1":
-      return ["rdv_initial"];
     case "in_progress_rdv_inter":
-    case "validated_inter":
       return ["rdv_initial", "rdv_inter"];
+    case "validated_inter":
     case "in_progress_rdv_final":
     case "completed":
       return ["rdv_initial", "rdv_inter", "rdv_final", "plan_action"];
