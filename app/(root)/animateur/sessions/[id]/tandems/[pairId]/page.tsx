@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { TandemLogo } from "@/components/brand/TandemLogo";
 import { TandemGrid } from "@/components/tandem/TandemGrid";
 import { TandemAttentes } from "@/components/tandem/TandemAttentes";
 import { statusLabel } from "@/lib/tandem-workflow";
@@ -108,14 +109,17 @@ export default async function AnimateurTandemReadOnlyPage({
       </Link>
 
       <header className="mt-4 mb-6 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {session.name} · Consultation animateur
-          </p>
-          <h1 className="text-2xl font-semibold">
-            Tandem — {participant.first_name} {participant.last_name} ×{" "}
-            {manager.first_name} {manager.last_name}
-          </h1>
+        <div className="flex items-start gap-3">
+          <TandemLogo size="md" />
+          <div>
+            <p className="text-coral text-xs font-semibold uppercase tracking-wider">
+              {session.name} · Consultation animateur
+            </p>
+            <h1 className="text-2xl font-semibold">
+              Tandem — {participant.first_name} {participant.last_name} ×{" "}
+              {manager.first_name} {manager.last_name}
+            </h1>
+          </div>
         </div>
         <div className="flex flex-col items-end gap-2">
           <Badge variant={isCompleted ? "success" : "secondary"}>

@@ -8,7 +8,7 @@
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
-    --primary: 215 58% 26%; /* Moortgat #1B3A6B */
+    --primary: 215 58% 26%; /* Moortgat navy #1B3A6B */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
@@ -23,6 +23,9 @@
     --ring: 215 58% 26%;
     --radius: 0.5rem;
     --organisation-primary: #1B3A6B;
+    /* Moortgat coral — utilisé pour titres de section / accents Tandem */
+    --tandem-coral: 350 65% 65%; /* ≈ #dc7388 */
+    --tandem-navy: 215 58% 22%;  /* ≈ #1a2942 (header bands) */
   }
 }
 

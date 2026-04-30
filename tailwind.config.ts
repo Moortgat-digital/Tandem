@@ -46,6 +46,14 @@ const config: Config = {
         organisation: {
           DEFAULT: "var(--organisation-primary, #1B3A6B)",
         },
+        coral: {
+          DEFAULT: "hsl(var(--tandem-coral))",
+          foreground: "#ffffff",
+        },
+        navy: {
+          DEFAULT: "hsl(var(--tandem-navy))",
+          foreground: "#ffffff",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

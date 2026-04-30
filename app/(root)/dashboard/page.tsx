@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Building2, Users } from "lucide-react";
+import { TandemLogo } from "@/components/brand/TandemLogo";
 
 export const metadata = { title: "Tableau de bord — Tandem" };
 
@@ -22,13 +23,16 @@ export default async function RootDashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl p-8">
-      <header className="mb-8 space-y-1">
-        <p className="text-muted-foreground text-sm uppercase tracking-wide">
-          {profile.role === "admin" ? "Administrateur" : "Animateur"}
-        </p>
-        <h1 className="text-3xl font-semibold">
-          Bonjour {profile.first_name} {profile.last_name}
-        </h1>
+      <header className="mb-8 flex items-center gap-4">
+        <TandemLogo size="lg" />
+        <div className="space-y-1">
+          <p className="text-coral text-xs font-semibold uppercase tracking-wider">
+            {profile.role === "admin" ? "Administrateur" : "Animateur"}
+          </p>
+          <h1 className="text-3xl font-semibold">
+            Bonjour {profile.first_name} {profile.last_name}
+          </h1>
+        </div>
       </header>
 
       <section className="grid gap-4 md:grid-cols-2">

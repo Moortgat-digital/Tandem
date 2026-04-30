@@ -1,6 +1,18 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Svg,
+  Circle,
+  Path,
+} from "@react-pdf/renderer";
 import type { TandemStage, TandemStatus } from "@/types/tandem";
 import { statusLabel } from "@/lib/tandem-workflow";
+
+const CORAL = "#dc7388";
+const NAVY = "#1a2942";
 
 export type TandemPdfData = {
   organisationName: string;
@@ -41,16 +53,31 @@ const styles = StyleSheet.create({
     color: "#0a0a0a",
     lineHeight: 1.4,
   },
+  brandHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 4,
+  },
+  brandWordmark: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    color: NAVY,
+    marginLeft: 8,
+  },
   headerEyebrow: {
     fontSize: 8,
-    color: "#737373",
+    color: CORAL,
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
+    fontFamily: "Helvetica-Bold",
+    marginTop: 12,
     marginBottom: 4,
   },
   title: {
     fontSize: 18,
     fontFamily: "Helvetica-Bold",
+    color: NAVY,
     marginBottom: 4,
   },
   statusLine: {
@@ -63,7 +90,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: "#404040",
+    color: CORAL,
     marginTop: 18,
     marginBottom: 8,
     borderBottomWidth: 1,
@@ -98,10 +125,13 @@ const styles = StyleSheet.create({
   priorityHeader: {
     fontSize: 12,
     fontFamily: "Helvetica-Bold",
+    color: NAVY,
     backgroundColor: "#f5f5f5",
     padding: 6,
     marginTop: 14,
     marginBottom: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: CORAL,
   },
   kpiBlock: {
     backgroundColor: "#fafafa",
@@ -200,11 +230,21 @@ export function TandemPdfDocument({ data }: { data: TandemPdfData }) {
   return (
     <Document title={`Tandem — ${data.participantName} × ${data.managerName}`}>
       <Page size="A4" style={styles.page}>
+        <View style={styles.brandHeader}>
+          <Svg width={32} height={32} viewBox="0 0 64 64">
+            <Circle cx="32" cy="32" r="32" fill={CORAL} />
+            <Circle cx="24" cy="26" r="6" fill="#ffffff" />
+            <Path d="M12 50 a12 12 0 0 1 24 0 v2 H12 z" fill="#ffffff" />
+            <Circle cx="42" cy="24" r="6.5" fill="#ffffff" />
+            <Path d="M28 50 a14 14 0 0 1 28 0 v2 H28 z" fill="#ffffff" />
+          </Svg>
+          <Text style={styles.brandWordmark}>Tandem by Moortgat</Text>
+        </View>
         <Text style={styles.headerEyebrow}>
           {data.organisationName} · {data.sessionName}
         </Text>
         <Text style={styles.title}>
-          Tandem — {data.participantName} × {data.managerName}
+          {data.participantName} × {data.managerName}
         </Text>
         <Text style={styles.statusLine}>
           {statusLabel(data.status)} · Exporté le {exportedAt}

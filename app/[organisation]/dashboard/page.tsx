@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { TandemLogo } from "@/components/brand/TandemLogo";
 import { statusLabel } from "@/lib/tandem-workflow";
 import type { TandemStatus } from "@/types/tandem";
 
@@ -88,13 +89,16 @@ export default async function OrganisationDashboardPage({
 
   return (
     <main className="mx-auto max-w-5xl p-8">
-      <header className="mb-8 space-y-1">
-        <p className="text-muted-foreground text-sm uppercase tracking-wide">
-          {profile.role === "participant" ? "Participant" : "Manager"}
-        </p>
-        <h1 className="text-3xl font-semibold">
-          Bonjour {profile.first_name} {profile.last_name}
-        </h1>
+      <header className="mb-8 flex items-center gap-4">
+        <TandemLogo size="lg" />
+        <div className="space-y-1">
+          <p className="text-coral text-xs font-semibold uppercase tracking-wider">
+            {profile.role === "participant" ? "Participant" : "Manager"}
+          </p>
+          <h1 className="text-3xl font-semibold">
+            Bonjour {profile.first_name} {profile.last_name}
+          </h1>
+        </div>
       </header>
 
       <section className="mb-8">
@@ -178,7 +182,7 @@ export default async function OrganisationDashboardPage({
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           <article className="rounded-lg border bg-card p-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-coral">
               Caractéristiques
             </p>
             <ul className="space-y-1.5 text-sm">
@@ -189,7 +193,7 @@ export default async function OrganisationDashboardPage({
             </ul>
           </article>
           <article className="rounded-lg border bg-card p-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-coral">
               Avantages
             </p>
             <ul className="space-y-1.5 text-sm">
@@ -200,7 +204,7 @@ export default async function OrganisationDashboardPage({
             </ul>
           </article>
           <article className="rounded-lg border bg-card p-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-coral">
               Bénéfices
             </p>
             <ul className="space-y-1.5 text-sm">
