@@ -11,7 +11,6 @@ const CreateUserSchema = z
     role: z.enum(["admin", "animateur", "participant", "manager"]),
     organisation_id: z.string().uuid().nullable().optional(),
     password: z.string().min(8).max(128).optional(),
-    send_invitation: z.boolean().optional().default(false),
   })
   .superRefine((v, ctx) => {
     const root = v.role === "admin" || v.role === "animateur";
@@ -31,10 +30,6 @@ const CreateUserSchema = z
     }
   });
 
-function generatePassword(): string {
-  return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
-}
-
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
@@ -51,42 +46,65 @@ export async function POST(request: Request) {
   const input = parsed.data;
   const admin = createAdminClient();
 
-  const password = input.password ?? generatePassword();
+  // Deux flux possibles :
+  //  1. Mot de passe explicite fourni → on crée le compte directement (cas
+  //     spécifique : compte de test, démo, ou import manuel).
+  //  2. Pas de mot de passe → on envoie une invitation par email avec un
+  //     magic link, l'utilisateur définit son propre mot de passe (défaut).
+  let userId: string;
+  let invitationSent = false;
 
-  const { data: created, error: createErr } = await admin.auth.admin.createUser({
-    email: input.email,
-    password,
-    email_confirm: true,
-  });
-
-  if (createErr || !created.user) {
-    return NextResponse.json(
-      { error: createErr?.message ?? "Création auth échouée" },
-      { status: 500 }
-    );
+  if (input.password) {
+    const { data: created, error: createErr } =
+      await admin.auth.admin.createUser({
+        email: input.email,
+        password: input.password,
+        email_confirm: true,
+      });
+    if (createErr || !created.user) {
+      return NextResponse.json(
+        { error: createErr?.message ?? "Création auth échouée" },
+        { status: 500 }
+      );
+    }
+    userId = created.user.id;
+  } else {
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "");
+    const { data: invited, error: inviteErr } =
+      await admin.auth.admin.inviteUserByEmail(input.email, {
+        redirectTo: `${appUrl}/auth/callback`,
+      });
+    if (inviteErr || !invited.user) {
+      return NextResponse.json(
+        { error: inviteErr?.message ?? "Envoi d'invitation échoué" },
+        { status: 500 }
+      );
+    }
+    userId = invited.user.id;
+    invitationSent = true;
   }
 
   const { error: profileErr } = await admin.from("profiles").insert({
-    id: created.user.id,
+    id: userId,
     email: input.email,
     first_name: input.first_name,
     last_name: input.last_name,
     role: input.role,
     organisation_id: input.organisation_id ?? null,
     is_active: true,
-    invitation_sent: false,
+    invitation_sent: invitationSent,
   });
 
   if (profileErr) {
     // Rollback auth si le profil n'a pas pu être créé.
-    await admin.auth.admin.deleteUser(created.user.id);
+    await admin.auth.admin.deleteUser(userId);
     return NextResponse.json({ error: profileErr.message }, { status: 500 });
   }
 
   return NextResponse.json(
     {
-      user: { id: created.user.id, email: input.email },
-      temporary_password: input.password ? undefined : password,
+      user: { id: userId, email: input.email },
+      invitation_sent: invitationSent,
     },
     { status: 201 }
   );

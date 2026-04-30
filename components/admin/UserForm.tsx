@@ -28,7 +28,7 @@ export function UserForm({ organisations }: { organisations: OrgOption[] }) {
     | { kind: "idle" }
     | { kind: "saving" }
     | { kind: "error"; message: string }
-    | { kind: "created"; tempPassword?: string }
+    | { kind: "created"; invitationSent: boolean }
   >({ kind: "idle" });
 
   const isRootRole = role === "admin" || role === "animateur";
@@ -54,7 +54,7 @@ export function UserForm({ organisations }: { organisations: OrgOption[] }) {
 
     const data = (await res.json().catch(() => ({}))) as {
       error?: string;
-      temporary_password?: string;
+      invitation_sent?: boolean;
     };
 
     if (!res.ok) {
@@ -62,7 +62,10 @@ export function UserForm({ organisations }: { organisations: OrgOption[] }) {
       return;
     }
 
-    setStatus({ kind: "created", tempPassword: data.temporary_password });
+    setStatus({
+      kind: "created",
+      invitationSent: data.invitation_sent ?? false,
+    });
   }
 
   if (status.kind === "created") {
@@ -72,18 +75,17 @@ export function UserForm({ organisations }: { organisations: OrgOption[] }) {
         <p className="text-sm">
           {firstName} {lastName} — {email}
         </p>
-        {status.tempPassword ? (
-          <div className="rounded-md bg-muted p-3">
-            <p className="text-xs text-muted-foreground">Mot de passe temporaire</p>
-            <code className="text-sm">{status.tempPassword}</code>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Transmets-le à l&apos;utilisateur, il pourra le changer via &quot;mot de passe oublié&quot;.
-            </p>
+        {status.invitationSent ? (
+          <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">
+            Un email d&apos;invitation a été envoyé à <strong>{email}</strong>.
+            L&apos;utilisateur cliquera sur le lien pour définir son mot de
+            passe et accéder à Tandem.
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Le mot de passe que tu as saisi a été utilisé.
-          </p>
+          <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+            Le mot de passe que tu as saisi a été utilisé. Transmets-le à
+            l&apos;utilisateur ; aucun email n&apos;a été envoyé.
+          </div>
         )}
         <div className="flex gap-2">
           <Button onClick={() => router.push("/admin/users")}>Retour à la liste</Button>
@@ -184,11 +186,14 @@ export function UserForm({ organisations }: { organisations: OrgOption[] }) {
           type="text"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Laisser vide pour en générer un automatiquement"
+          placeholder="Laisser vide pour envoyer un email d'invitation"
           minLength={8}
         />
         <p className="text-xs text-muted-foreground">
-          Minimum 8 caractères. Si vide, un mot de passe temporaire sera généré et affiché.
+          Si vide (recommandé), un email d&apos;invitation est envoyé à
+          l&apos;utilisateur ; il cliquera sur un lien pour définir lui-même son
+          mot de passe. Sinon, ce mot de passe sera utilisé directement et
+          aucun email ne partira (pratique pour des comptes de test).
         </p>
       </div>
 

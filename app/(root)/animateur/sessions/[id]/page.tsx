@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RelanceButton } from "@/components/animateur/RelanceButton";
 import { statusLabel } from "@/lib/tandem-workflow";
 import type { TandemStatus } from "@/types/tandem";
 
@@ -172,6 +173,7 @@ export default async function AnimateurSessionDetailPage({
                 <TableHead>Manager (N+1)</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Dernière édition</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -181,6 +183,12 @@ export default async function AnimateurSessionDetailPage({
                 const status = p.tandem_status as TandemStatus;
                 const badge = PAIR_BADGE[status] ?? PAIR_BADGE.not_started;
                 const last = lastEditByPair.get(p.id);
+                const participantName = participant
+                  ? `${participant.first_name} ${participant.last_name}`
+                  : "Participant";
+                const managerName = manager
+                  ? `${manager.first_name} ${manager.last_name}`
+                  : "Manager";
                 return (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">
@@ -188,16 +196,10 @@ export default async function AnimateurSessionDetailPage({
                         href={`/animateur/sessions/${id}/tandems/${p.id}`}
                         className="hover:underline"
                       >
-                        {participant
-                          ? `${participant.first_name} ${participant.last_name}`
-                          : "—"}
+                        {participantName}
                       </Link>
                     </TableCell>
-                    <TableCell>
-                      {manager
-                        ? `${manager.first_name} ${manager.last_name}`
-                        : "—"}
-                    </TableCell>
+                    <TableCell>{managerName}</TableCell>
                     <TableCell>
                       <Badge variant={badge.variant}>
                         {statusLabel(status)}
@@ -205,6 +207,14 @@ export default async function AnimateurSessionDetailPage({
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {last ? formatDateTime(last) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <RelanceButton
+                        sessionId={id}
+                        pairId={p.id}
+                        participantName={participantName}
+                        managerName={managerName}
+                      />
                     </TableCell>
                   </TableRow>
                 );

@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { sendSessionActivationEmail } from "@/lib/brevo";
 
 /**
  * Active une session. Prérequis minimum :
  *  - au moins un animateur rattaché
  *  - au moins un binôme N / N+1 créé
  *
- * L'envoi des invitations email (Brevo) est planifié en Phase 2c.
+ * Après activation, un email est envoyé à chaque membre des binômes.
+ * Les échecs d'envoi n'empêchent pas l'activation : on log et on continue.
  */
 export async function POST(
   _request: Request,
@@ -21,7 +23,7 @@ export async function POST(
 
   const { data: session } = await admin
     .from("sessions")
-    .select("status")
+    .select("id, name, status, organisation_id")
     .eq("id", sessionId)
     .maybeSingle();
   if (!session) {
@@ -66,5 +68,63 @@ export async function POST(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Notifications par email — best effort, ne bloque pas l'activation.
+  void notifyPairMembers({
+    sessionId,
+    sessionName: session.name,
+    organisationId: session.organisation_id,
+  }).catch((err) => {
+    console.error("[session-activation] notifyPairMembers failed:", err);
+  });
+
   return NextResponse.json({ session: data });
+}
+
+async function notifyPairMembers(input: {
+  sessionId: string;
+  sessionName: string;
+  organisationId: string;
+}): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data: organisation } = await admin
+    .from("organisations")
+    .select("slug")
+    .eq("id", input.organisationId)
+    .maybeSingle();
+  if (!organisation) return;
+
+  const { data: pairs } = await admin
+    .from("tandem_pairs")
+    .select("participant_id, manager_id")
+    .eq("session_id", input.sessionId);
+
+  const memberIds = Array.from(
+    new Set(
+      (pairs ?? []).flatMap((p) => [p.participant_id, p.manager_id])
+    )
+  );
+  if (memberIds.length === 0) return;
+
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, email, first_name")
+    .in("id", memberIds);
+
+  for (const profile of profiles ?? []) {
+    if (!profile.email) continue;
+    try {
+      await sendSessionActivationEmail({
+        recipient: { email: profile.email, name: profile.first_name },
+        firstName: profile.first_name,
+        sessionName: input.sessionName,
+        organisationSlug: organisation.slug,
+      });
+    } catch (err) {
+      console.error(
+        `[session-activation] email to ${profile.email} failed:`,
+        err
+      );
+    }
+  }
 }
