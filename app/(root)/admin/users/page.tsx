@@ -98,8 +98,14 @@ export default async function UsersListPage() {
                     <UserRowActions
                       user={{
                         id: u.id,
+                        role: u.role,
+                        organisation_id: u.organisation_id,
                         is_active: u.is_active ?? true,
                       }}
+                      organisations={(orgs ?? []).map((o) => ({
+                        id: o.id,
+                        display_name: o.display_name,
+                      }))}
                     />
                   </TableCell>
                 </TableRow>

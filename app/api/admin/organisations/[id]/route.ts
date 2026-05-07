@@ -53,3 +53,64 @@ export async function PATCH(
 
   return NextResponse.json({ organisation: data });
 }
+
+/**
+ * Suppression d'une organisation.
+ *
+ * Cascade DB (déjà en place) :
+ *  - sessions ON DELETE CASCADE → tandem_pairs / documents / entries /
+ *    validations / members / animateurs / formation_groups disparaissent
+ *  - audit_logs sur tenant_id : ON DELETE SET NULL (préserve l'historique)
+ *  - profiles ON DELETE CASCADE : on les détache AVANT (organisation_id =
+ *    NULL) pour éviter de perdre les comptes auth — l'admin pourra les
+ *    réaffecter à une autre org ou les supprimer un par un.
+ */
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
+  const { id } = await params;
+  const admin = createAdminClient();
+
+  const { data: existing } = await admin
+    .from("organisations")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!existing) {
+    return NextResponse.json({ error: "Organisation introuvable" }, { status: 404 });
+  }
+
+  // Compte avant détachement, pour le retourner à l'admin en réponse.
+  const { count: detachedCount } = await admin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("organisation_id", id);
+
+  // Détache les profiles attachés pour préserver les comptes auth Supabase.
+  const { error: detachErr } = await admin
+    .from("profiles")
+    .update({ organisation_id: null })
+    .eq("organisation_id", id);
+  if (detachErr) {
+    return NextResponse.json({ error: detachErr.message }, { status: 500 });
+  }
+
+  // Supprime l'organisation — la cascade DB nettoie sessions et tout ce
+  // qui en dépend (binômes, documents, entries, validations, animateurs).
+  const { error: deleteErr } = await admin
+    .from("organisations")
+    .delete()
+    .eq("id", id);
+  if (deleteErr) {
+    return NextResponse.json({ error: deleteErr.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    deleted: true,
+    detached_profiles: detachedCount ?? 0,
+  });
+}
