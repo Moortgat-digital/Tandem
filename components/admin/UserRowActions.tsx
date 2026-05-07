@@ -90,7 +90,7 @@ export function UserRowActions({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
         {open ? (
-          <div className="absolute right-0 z-10 mt-1 w-52 rounded-md border bg-popover p-1 shadow-md">
+          <div className="absolute right-0 z-50 mt-1 w-52 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
             {!isRootRole ? (
               <button
                 type="button"

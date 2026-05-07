@@ -69,7 +69,7 @@ export function OrganisationRowActions({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
         {open ? (
-          <div className="absolute right-0 z-10 mt-1 w-44 rounded-md border bg-popover p-1 shadow-md">
+          <div className="absolute right-0 z-50 mt-1 w-44 rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
             <Link
               href={`/admin/organisations/${organisation.id}`}
               className="block rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
