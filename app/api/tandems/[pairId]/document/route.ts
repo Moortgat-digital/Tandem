@@ -36,30 +36,10 @@ export async function PATCH(
     );
   }
 
-  // Verrou de rôle sur les champs Attentes :
-  //  - attentes_participant ne peut être écrit que par le participant (ou admin)
-  //  - attentes_manager     ne peut être écrit que par le manager     (ou admin)
-  const { role } = auth.access;
-  if (
-    parsed.data.attentes_participant !== undefined &&
-    role !== "participant" &&
-    role !== "admin"
-  ) {
-    return NextResponse.json(
-      { error: "forbidden_attentes_participant" },
-      { status: 403 }
-    );
-  }
-  if (
-    parsed.data.attentes_manager !== undefined &&
-    role !== "manager" &&
-    role !== "admin"
-  ) {
-    return NextResponse.json(
-      { error: "forbidden_attentes_manager" },
-      { status: 403 }
-    );
-  }
+  // Pas de verrou de rôle sur attentes_participant / attentes_manager :
+  // pendant les RDV managériaux, le binôme partage souvent un seul écran et
+  // l'un peut saisir pour l'autre. Les deux membres du binôme sont autorisés
+  // à écrire dans les deux champs (cf. requireTandemPairAccess plus haut).
 
   const supabase = await createClient();
   const { data, error } = await supabase

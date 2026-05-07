@@ -119,42 +119,54 @@ export default async function TandemPage({
       pairId={pair.id}
       me={{ userId: user.id, firstName: meFirstName, role }}
     >
-      <main className="mx-auto max-w-7xl p-6">
-        <div className="mb-4 text-xs text-muted-foreground">
-          <Link href={`/${slug}/dashboard`} className="hover:text-foreground">
-            ← Dashboard
-          </Link>
-        </div>
-
-        <header className="mb-6 flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <TandemLogo size="md" />
-            <div>
-              <p className="text-coral text-xs font-semibold uppercase tracking-wider">
-                {session.name} · {role === "participant" ? "Participant (N)" : "Manager (N+1)"}
-              </p>
-              <h1 className="text-2xl font-semibold">
-                Tandem — {participant.first_name} {participant.last_name} × {manager.first_name}{" "}
-                {manager.last_name}
-              </h1>
+      <main className="min-h-screen bg-muted/20">
+        <div className="bg-navy text-white">
+          <div className="mx-auto max-w-7xl px-6 py-6">
+            <div className="mb-3 text-xs text-white/70">
+              <Link
+                href={`/${slug}/dashboard`}
+                className="hover:text-white"
+              >
+                ← Dashboard
+              </Link>
+            </div>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <TandemLogo size="md" />
+                <div>
+                  <p className="text-coral text-xs font-semibold uppercase tracking-wider">
+                    {session.name} · {role === "participant" ? "Participant (N)" : "Manager (N+1)"}
+                  </p>
+                  <h1 className="text-2xl font-semibold">
+                    {participant.first_name} {participant.last_name} × {manager.first_name}{" "}
+                    {manager.last_name}
+                  </h1>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <span
+                  className={
+                    isCompleted
+                      ? "rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-emerald-950"
+                      : "rounded-full bg-coral px-3 py-1 text-xs font-semibold text-white"
+                  }
+                >
+                  {statusLabel(status)}
+                </span>
+                <PresenceBadge />
+                <a
+                  href={`/api/tandems/${pair.id}/export`}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exporter en PDF
+                </a>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge variant={isCompleted ? "success" : "secondary"}>
-              {statusLabel(status)}
-            </Badge>
-            <PresenceBadge />
-            <a
-              href={`/api/tandems/${pair.id}/export`}
-              className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Exporter en PDF
-            </a>
-          </div>
-        </header>
+        </div>
 
-        <div className="space-y-6">
+        <div className="mx-auto max-w-7xl space-y-6 px-6 py-6">
           <TandemHeader
           pairId={pair.id}
           participantName={`${participant.first_name} ${participant.last_name}`}
@@ -172,8 +184,8 @@ export default async function TandemPage({
           pairId={pair.id}
           initialParticipant={document.attentes_participant ?? ""}
           initialManager={document.attentes_manager ?? ""}
-          canEditParticipant={attentesEditable && role === "participant"}
-          canEditManager={attentesEditable && role === "manager"}
+          canEditParticipant={attentesEditable}
+          canEditManager={attentesEditable}
         />
 
         <TandemGrid
@@ -197,17 +209,18 @@ export default async function TandemPage({
         />
 
         {currentStage ? (
-          <section className="rounded-lg border bg-muted/30 p-4">
+          <section className="rounded-lg border-l-4 border-coral bg-card p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium">Valider ce compte rendu</p>
-                <p className="text-xs text-muted-foreground">
-                  Étape en cours :{" "}
-                  <strong>
-                    {stageLabel(currentStage)}
-                    {currentStage === "rdv_inter" ? ` N°${openInterIndex}` : ""}
-                  </strong>
-                  . N ou N+1 peut valider ; la validation verrouille cette étape
+                <p className="text-coral text-xs font-semibold uppercase tracking-wider">
+                  Étape en cours
+                </p>
+                <p className="text-sm font-semibold">
+                  {stageLabel(currentStage)}
+                  {currentStage === "rdv_inter" ? ` N°${openInterIndex}` : ""}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  N ou N+1 peut valider ; la validation verrouille cette étape
                   en lecture seule.
                 </p>
               </div>

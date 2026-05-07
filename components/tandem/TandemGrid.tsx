@@ -60,13 +60,13 @@ export function TandemGrid({
       <table className="w-full min-w-[900px] border-separate border-spacing-0">
         <thead>
           <tr>
-            <th className="sticky left-0 z-10 w-[200px] border-b bg-muted/40 p-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="sticky left-0 z-10 w-[200px] border-b bg-navy p-3 text-left text-xs font-semibold uppercase tracking-wider text-white">
               Étape
             </th>
             {columns.map((pos) => (
               <th
                 key={pos}
-                className="w-[260px] border-b border-l bg-muted/40 p-3 text-left align-top"
+                className="w-[260px] border-b border-l bg-navy p-3 text-left align-top"
               >
                 <PriorityHeaderCell
                   pairId={pairId}
@@ -145,13 +145,13 @@ export function TandemGrid({
                         {formatDate(date)}
                       </p>
                       {isOpen && interStageEditable ? (
-                        <p className="mt-1 text-[10px] font-normal text-primary">
+                        <span className="mt-1 inline-block rounded-full bg-coral px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                           Saisie en cours
-                        </p>
+                        </span>
                       ) : isPast ? (
-                        <p className="mt-1 text-[10px] font-normal text-emerald-700">
+                        <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
                           Validé
-                        </p>
+                        </span>
                       ) : null}
                     </td>
                     {columns.map((pos) => {
@@ -204,9 +204,9 @@ export function TandemGrid({
                 <td className="sticky left-0 z-10 border-b bg-muted/20 p-3 align-top text-sm font-medium">
                   {stageLabel(stage)}
                   {(editable as readonly TandemStage[]).includes(stage) ? (
-                    <p className="mt-1 text-[10px] font-normal text-primary">
+                    <span className="mt-1 inline-block rounded-full bg-coral px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                       Saisie en cours
-                    </p>
+                    </span>
                   ) : null}
                 </td>
                 {columns.map((pos) => {
