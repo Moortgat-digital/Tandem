@@ -17,14 +17,17 @@ import type { Organisation } from "@/types/tandem";
 
 export function OrganisationRowActions({
   organisation,
+  attachedProfilesCount,
 }: {
   organisation: Organisation;
+  attachedProfilesCount: number;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasAttachedProfiles = attachedProfilesCount > 0;
 
   async function toggleActive() {
     setPending(true);
@@ -105,16 +108,24 @@ export function OrganisationRowActions({
           <DialogHeader>
             <DialogTitle>Supprimer l&apos;organisation ?</DialogTitle>
             <DialogDescription>
-              <strong>{organisation.display_name}</strong> sera définitivement
-              supprimée, ainsi que <strong>toutes ses sessions</strong>, leurs
-              binômes et leurs comptes rendus Tandem. Cette action est
-              irréversible.
-              <span className="mt-3 block">
-                Les comptes utilisateurs (participants, managers) attachés à
-                l&apos;organisation seront <strong>détachés</strong> mais
-                conservés ; tu pourras les réaffecter ailleurs ou les
-                supprimer un par un depuis la liste Utilisateurs.
-              </span>
+              {hasAttachedProfiles ? (
+                <>
+                  <strong>{attachedProfilesCount} utilisateur
+                  {attachedProfilesCount > 1 ? "s sont" : " est"}</strong>{" "}
+                  encore rattaché{attachedProfilesCount > 1 ? "s" : ""} à{" "}
+                  <strong>{organisation.display_name}</strong>. Réaffecte-
+                  {attachedProfilesCount > 1 ? "les" : "le"} à une autre
+                  organisation (ou supprime-{attachedProfilesCount > 1 ? "les" : "le"})
+                  avant de pouvoir supprimer cette organisation.
+                </>
+              ) : (
+                <>
+                  <strong>{organisation.display_name}</strong> sera
+                  définitivement supprimée, ainsi que{" "}
+                  <strong>toutes ses sessions</strong>, leurs binômes et leurs
+                  comptes rendus Tandem. Cette action est irréversible.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           {error ? (
@@ -126,15 +137,24 @@ export function OrganisationRowActions({
               onClick={() => setConfirmDelete(false)}
               disabled={pending}
             >
-              Annuler
+              {hasAttachedProfiles ? "Fermer" : "Annuler"}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={deleteOrganisation}
-              disabled={pending}
-            >
-              {pending ? "Suppression…" : "Supprimer définitivement"}
-            </Button>
+            {hasAttachedProfiles ? (
+              <Button
+                onClick={() => router.push("/admin/users")}
+                disabled={pending}
+              >
+                Aller à la liste Utilisateurs
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={deleteOrganisation}
+                disabled={pending}
+              >
+                {pending ? "Suppression…" : "Supprimer définitivement"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

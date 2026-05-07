@@ -84,19 +84,24 @@ export async function DELETE(
     return NextResponse.json({ error: "Organisation introuvable" }, { status: 404 });
   }
 
-  // Compte avant détachement, pour le retourner à l'admin en réponse.
-  const { count: detachedCount } = await admin
+  // La contrainte CHECK `root_roles_have_no_organisation` impose qu'un
+  // participant/manager ait toujours un organisation_id NOT NULL — on ne
+  // peut donc pas se contenter de détacher. Si des profils sont attachés,
+  // l'admin doit d'abord les réaffecter (ou les supprimer un par un).
+  const { count: attachedCount } = await admin
     .from("profiles")
     .select("id", { count: "exact", head: true })
     .eq("organisation_id", id);
 
-  // Détache les profiles attachés pour préserver les comptes auth Supabase.
-  const { error: detachErr } = await admin
-    .from("profiles")
-    .update({ organisation_id: null })
-    .eq("organisation_id", id);
-  if (detachErr) {
-    return NextResponse.json({ error: detachErr.message }, { status: 500 });
+  if ((attachedCount ?? 0) > 0) {
+    return NextResponse.json(
+      {
+        error: "attached_profiles",
+        attached_profiles: attachedCount ?? 0,
+        message: `${attachedCount} utilisateur(s) sont rattachés à cette organisation. Réaffecte-les ou supprime-les d'abord depuis la liste Utilisateurs.`,
+      },
+      { status: 409 }
+    );
   }
 
   // Supprime l'organisation — la cascade DB nettoie sessions et tout ce
@@ -109,8 +114,5 @@ export async function DELETE(
     return NextResponse.json({ error: deleteErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({
-    deleted: true,
-    detached_profiles: detachedCount ?? 0,
-  });
+  return NextResponse.json({ deleted: true });
 }

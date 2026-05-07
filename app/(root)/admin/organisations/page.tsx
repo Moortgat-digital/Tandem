@@ -22,6 +22,21 @@ export default async function OrganisationsListPage() {
 
   const rows = organisations ?? [];
 
+  // Compte des profils attachés par organisation (utile pour le dialog
+  // de suppression : on bloque la suppression tant qu'il en reste).
+  const { data: profileRows } = await supabase
+    .from("profiles")
+    .select("organisation_id")
+    .not("organisation_id", "is", null);
+  const profileCountByOrg = new Map<string, number>();
+  for (const p of profileRows ?? []) {
+    if (!p.organisation_id) continue;
+    profileCountByOrg.set(
+      p.organisation_id,
+      (profileCountByOrg.get(p.organisation_id) ?? 0) + 1
+    );
+  }
+
   return (
     <div className="p-8">
       <header className="mb-6 flex items-center justify-between">
@@ -87,7 +102,10 @@ export default async function OrganisationsListPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <OrganisationRowActions organisation={org} />
+                    <OrganisationRowActions
+                      organisation={org}
+                      attachedProfilesCount={profileCountByOrg.get(org.id) ?? 0}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
