@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
@@ -143,9 +144,18 @@ export function SessionMembersSection({
             <div className="space-y-1">
               <label className="text-sm font-medium">Profil</label>
               {availableProfiles.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Aucun profil disponible dans cette organisation.
-                </p>
+                <div className="rounded-md border border-dashed bg-muted/30 p-3 text-sm">
+                  <p className="text-muted-foreground">
+                    Aucun profil <strong>{selectedRole === "participant" ? "Participant" : "Manager"}</strong> dans cette organisation.
+                  </p>
+                  <Link
+                    href="/admin/users/new"
+                    className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-coral hover:underline"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Créer un utilisateur
+                  </Link>
+                </div>
               ) : (
                 <Select value={selectedProfile} onValueChange={setSelectedProfile}>
                   <SelectTrigger>
