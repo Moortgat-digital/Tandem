@@ -43,7 +43,7 @@ function PriorityHeaderDisplay({
         title ? "bg-primary/5 text-foreground" : "bg-muted/40 text-muted-foreground"
       )}
     >
-      {title || `Priorité ${position} — non définie`}
+      {title || `Axe de travail ${position} — non défini`}
     </div>
   );
 }
@@ -154,7 +154,7 @@ function PriorityHeaderEditor({
           setValue(e.target.value);
           scheduleSave(e.target.value);
         }}
-        placeholder={`Priorité ${position}`}
+        placeholder={`Axe de travail ${position}`}
         className={cn(
           "font-medium",
           isLockedByOther && "cursor-not-allowed border-amber-400 bg-amber-50/40"
@@ -167,7 +167,7 @@ function PriorityHeaderEditor({
             ? "Enregistrement…"
             : value.trim()
               ? ""
-              : "Nomme la priorité pour activer la colonne"}
+              : "Nomme l'axe de travail pour activer la colonne"}
       </p>
     </div>
   );

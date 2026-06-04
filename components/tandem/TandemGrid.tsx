@@ -14,6 +14,7 @@ type EntryDto = {
   inter_index: number;
   content: string | null;
   is_locked: boolean | null;
+  acquisition_pct: number | null;
 };
 
 export function TandemGrid({
@@ -81,9 +82,9 @@ export function TandemGrid({
         <tbody>
           <tr>
             <td className="sticky left-0 z-10 border-b bg-muted/20 p-3 align-top text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              KPI
+              Objectif
               <p className="mt-1 text-[10px] font-normal normal-case text-muted-foreground">
-                Comment mesurer l&apos;évolution
+                Quel objectif ? Et pour quand ?
               </p>
             </td>
             {columns.map((pos) => {
@@ -183,6 +184,10 @@ export function TandemGrid({
                               stage="rdv_inter"
                               interIndex={interIndex}
                               initialValue={entry?.content ?? ""}
+                              initialAcquisitionPct={
+                                entry?.acquisition_pct ?? null
+                              }
+                              showAcquisition={true}
                               editable={isEditable}
                               placeholder={placeholder}
                             />
@@ -221,10 +226,10 @@ export function TandemGrid({
                     stageEditable && hasTitle && !entry?.is_locked;
                   const placeholder =
                     stage === "rdv_initial"
-                      ? "Décris ce que cette priorité signifie concrètement…"
+                      ? "État de cet axe à l'instant t…"
                       : stage === "plan_action"
                         ? stageEditable
-                          ? "Actions concrètes à mettre en place…"
+                          ? "Qui, quoi, quand ?"
                           : status === "completed"
                             ? undefined
                             : "Disponible au RDV final"
@@ -241,6 +246,10 @@ export function TandemGrid({
                           stage={stage}
                           interIndex={0}
                           initialValue={entry?.content ?? ""}
+                          initialAcquisitionPct={
+                            entry?.acquisition_pct ?? null
+                          }
+                          showAcquisition={stage !== "plan_action"}
                           editable={isEditable}
                           placeholder={placeholder}
                         />

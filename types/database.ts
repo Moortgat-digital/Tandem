@@ -362,6 +362,7 @@ export type Database = {
       }
       tandem_entries: {
         Row: {
+          acquisition_pct: number | null
           content: string | null
           document_id: string
           id: string
@@ -373,6 +374,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          acquisition_pct?: number | null
           content?: string | null
           document_id: string
           id?: string
@@ -384,6 +386,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          acquisition_pct?: number | null
           content?: string | null
           document_id?: string
           id?: string

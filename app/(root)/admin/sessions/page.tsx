@@ -60,7 +60,7 @@ export default async function SessionsListPage() {
               <TableRow>
                 <TableHead>Nom</TableHead>
                 <TableHead>Organisation</TableHead>
-                <TableHead>Priorités max</TableHead>
+                <TableHead>Axes de travail max</TableHead>
                 <TableHead>Statut</TableHead>
               </TableRow>
             </TableHeader>

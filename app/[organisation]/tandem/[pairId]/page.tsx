@@ -88,7 +88,9 @@ export default async function TandemPage({
         .order("position"),
       supabase
         .from("tandem_entries")
-        .select("priority_pos, stage, inter_index, content, is_locked")
+        .select(
+          "priority_pos, stage, inter_index, content, is_locked, acquisition_pct"
+        )
         .eq("document_id", document.id),
       supabase
         .from("tandem_validations")
@@ -203,6 +205,7 @@ export default async function TandemPage({
             inter_index: e.inter_index,
             content: e.content,
             is_locked: e.is_locked,
+            acquisition_pct: e.acquisition_pct,
           }))}
           interDates={interDates}
           nbValidatedInter={interValidatedCount}
@@ -233,7 +236,7 @@ export default async function TandemPage({
                 disabled={!hasPriority}
                 hint={
                   !hasPriority
-                    ? "Nomme au moins une priorité avant de valider."
+                    ? "Nomme au moins un axe de travail avant de valider."
                     : undefined
                 }
               />

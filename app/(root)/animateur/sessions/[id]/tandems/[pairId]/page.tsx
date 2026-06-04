@@ -87,7 +87,9 @@ export default async function AnimateurTandemReadOnlyPage({
         .order("position"),
       supabase
         .from("tandem_entries")
-        .select("priority_pos, stage, inter_index, content, is_locked")
+        .select(
+          "priority_pos, stage, inter_index, content, is_locked, acquisition_pct"
+        )
         .eq("document_id", document.id),
       supabase
         .from("tandem_validations")
@@ -195,6 +197,7 @@ export default async function AnimateurTandemReadOnlyPage({
             inter_index: e.inter_index,
             content: e.content,
             is_locked: e.is_locked,
+            acquisition_pct: e.acquisition_pct,
           }))}
           interDates={document.dates_rdv_inter ?? []}
           nbValidatedInter={nbValidatedInter ?? 0}

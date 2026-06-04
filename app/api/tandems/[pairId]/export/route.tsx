@@ -111,7 +111,9 @@ export async function GET(
         .order("position"),
       supabase
         .from("tandem_entries")
-        .select("priority_pos, stage, inter_index, content")
+        .select(
+          "priority_pos, stage, inter_index, content, acquisition_pct"
+        )
         .eq("document_id", document.id),
     ]);
 
@@ -141,6 +143,7 @@ export async function GET(
       stage: e.stage as TandemStage,
       interIndex: e.inter_index,
       content: e.content ?? "",
+      acquisitionPct: e.acquisition_pct,
     })),
   };
 

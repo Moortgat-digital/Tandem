@@ -12,6 +12,7 @@ const Schema = z
     stage: z.enum(["rdv_initial", "rdv_inter", "rdv_final", "plan_action"]),
     content: z.string().max(10_000),
     inter_index: z.number().int().min(1).max(3).optional(),
+    acquisition_pct: z.number().int().min(1).max(10).nullable().optional(),
   })
   .refine(
     (v) => (v.stage === "rdv_inter" ? v.inter_index !== undefined : true),
@@ -74,7 +75,7 @@ export async function PUT(
     .maybeSingle();
   if (!priority) {
     return NextResponse.json(
-      { error: "Nomme d'abord cette priorité avant de saisir son contenu" },
+      { error: "Nomme d'abord cet axe de travail avant de saisir son contenu" },
       { status: 400 }
     );
   }
@@ -106,20 +107,33 @@ export async function PUT(
   const interIndex =
     parsed.data.stage === "rdv_inter" ? (parsed.data.inter_index ?? 0) : 0;
 
+  const upsertData: {
+    document_id: string;
+    priority_pos: number;
+    stage: string;
+    inter_index: number;
+    content: string;
+    updated_by: string;
+    updated_at: string;
+    acquisition_pct?: number | null;
+  } = {
+    document_id: doc.id,
+    priority_pos: parsed.data.priority_pos,
+    stage: parsed.data.stage,
+    inter_index: interIndex,
+    content: parsed.data.content,
+    updated_by: auth.access.userId,
+    updated_at: new Date().toISOString(),
+  };
+  if (parsed.data.acquisition_pct !== undefined) {
+    upsertData.acquisition_pct = parsed.data.acquisition_pct;
+  }
+
   const { data, error } = await supabase
     .from("tandem_entries")
-    .upsert(
-      {
-        document_id: doc.id,
-        priority_pos: parsed.data.priority_pos,
-        stage: parsed.data.stage,
-        inter_index: interIndex,
-        content: parsed.data.content,
-        updated_by: auth.access.userId,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "document_id,priority_pos,stage,inter_index" }
-    )
+    .upsert(upsertData, {
+      onConflict: "document_id,priority_pos,stage,inter_index",
+    })
     .select()
     .single();
 

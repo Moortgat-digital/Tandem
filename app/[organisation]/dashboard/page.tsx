@@ -279,7 +279,7 @@ export default async function OrganisationDashboardPage({
                 Caractéristiques
               </p>
               <ul className="space-y-1.5 text-sm">
-                <li>Compte rendu structuré en priorités personnalisables</li>
+                <li>Compte rendu structuré en axes de travail personnalisables</li>
                 <li>Trois étapes : RDV initial, intermédiaire, final</li>
                 <li>Édition simultanée à deux, en temps réel</li>
                 <li>Validation conjointe à chaque étape</li>
@@ -301,7 +301,7 @@ export default async function OrganisationDashboardPage({
                 Bénéfices
               </p>
               <ul className="space-y-1.5 text-sm">
-                <li>Un cap clair sur chaque priorité de progression</li>
+                <li>Un cap clair sur chaque axe de travail</li>
                 <li>Un fil rouge entre les RDVs, sans rien perdre</li>
                 <li>Un plan d&apos;action concret à la fin du parcours</li>
                 <li>Un appui durable à votre développement professionnel</li>

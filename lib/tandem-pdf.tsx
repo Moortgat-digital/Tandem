@@ -40,6 +40,7 @@ export type TandemPdfData = {
     stage: TandemStage;
     interIndex: number;
     content: string;
+    acquisitionPct: number | null;
   }[];
 };
 
@@ -203,15 +204,17 @@ function getEntry(
   priorityPos: number,
   stage: TandemStage,
   interIndex: number
-): string {
-  return (
-    entries.find(
-      (e) =>
-        e.priorityPos === priorityPos &&
-        e.stage === stage &&
-        e.interIndex === interIndex
-    )?.content ?? ""
+): { content: string; acquisitionPct: number | null } {
+  const e = entries.find(
+    (e) =>
+      e.priorityPos === priorityPos &&
+      e.stage === stage &&
+      e.interIndex === interIndex
   );
+  return {
+    content: e?.content ?? "",
+    acquisitionPct: e?.acquisitionPct ?? null,
+  };
 }
 
 export function TandemPdfDocument({ data }: { data: TandemPdfData }) {
@@ -304,21 +307,21 @@ export function TandemPdfDocument({ data }: { data: TandemPdfData }) {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Compte rendu par priorité</Text>
+        <Text style={styles.sectionTitle}>Compte rendu par axe de travail</Text>
         {populatedPriorities.length === 0 ? (
           <Text style={styles.empty}>
-            Aucune priorité n&apos;a encore été définie pour ce binôme.
+            Aucun axe de travail n&apos;a encore été défini pour ce binôme.
           </Text>
         ) : (
           populatedPriorities.map((p) => (
             <View key={p.position} wrap={false}>
               <Text style={styles.priorityHeader}>
-                Priorité {p.position} — {p.title}
+                Axe de travail {p.position} — {p.title}
               </Text>
 
               <View style={styles.kpiBlock}>
                 <Text style={styles.kpiLabel}>
-                  KPI · Comment mesurer l&apos;évolution
+                  Objectif · Quel objectif ? Et pour quand ?
                 </Text>
                 {p.kpi ? (
                   <Text style={styles.stageContent}>{p.kpi}</Text>
@@ -328,9 +331,11 @@ export function TandemPdfDocument({ data }: { data: TandemPdfData }) {
               </View>
 
               <View style={styles.stageBlock}>
-                <Text style={styles.stageLabel}>RDV initial — Description</Text>
+                <Text style={styles.stageLabel}>
+                  RDV initial — État à l&apos;instant t et % d&apos;acquisition
+                </Text>
                 <RenderEntry
-                  content={getEntry(data.entries, p.position, "rdv_initial", 0)}
+                  entry={getEntry(data.entries, p.position, "rdv_initial", 0)}
                 />
               </View>
 
@@ -349,7 +354,7 @@ export function TandemPdfDocument({ data }: { data: TandemPdfData }) {
                       </Text>
                       <Text style={styles.stageDate}>{formatDate(date)}</Text>
                       <RenderEntry
-                        content={getEntry(
+                        entry={getEntry(
                           data.entries,
                           p.position,
                           "rdv_inter",
@@ -364,19 +369,20 @@ export function TandemPdfDocument({ data }: { data: TandemPdfData }) {
               <View style={styles.stageBlock}>
                 <Text style={styles.stageLabel}>RDV final — Observations</Text>
                 <RenderEntry
-                  content={getEntry(data.entries, p.position, "rdv_final", 0)}
+                  entry={getEntry(data.entries, p.position, "rdv_final", 0)}
                 />
               </View>
 
               <View style={styles.stageBlock}>
                 <Text style={styles.stageLabel}>Plan d&apos;action</Text>
                 <RenderEntry
-                  content={getEntry(
+                  entry={getEntry(
                     data.entries,
                     p.position,
                     "plan_action",
                     0
                   )}
+                  hidePct
                 />
               </View>
             </View>
@@ -398,9 +404,26 @@ export function TandemPdfDocument({ data }: { data: TandemPdfData }) {
   );
 }
 
-function RenderEntry({ content }: { content: string }) {
-  if (!content.trim()) {
-    return <Text style={styles.empty}>Non renseigné</Text>;
-  }
-  return <Text style={styles.stageContent}>{content}</Text>;
+function RenderEntry({
+  entry,
+  hidePct = false,
+}: {
+  entry: { content: string; acquisitionPct: number | null };
+  hidePct?: boolean;
+}) {
+  const empty = !entry.content.trim();
+  return (
+    <>
+      {empty ? (
+        <Text style={styles.empty}>Non renseigné</Text>
+      ) : (
+        <Text style={styles.stageContent}>{entry.content}</Text>
+      )}
+      {!hidePct && entry.acquisitionPct !== null ? (
+        <Text style={styles.stageDate}>
+          % d&apos;acquisition : {entry.acquisitionPct}/10
+        </Text>
+      ) : null}
+    </>
+  );
 }

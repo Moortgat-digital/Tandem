@@ -193,7 +193,7 @@ export function statusLabel(status: TandemStatus): string {
 export function stageLabel(stage: TandemStage): string {
   switch (stage) {
     case "rdv_initial":
-      return "RDV initial — Description";
+      return "RDV initial — État à l'instant t et % d'acquisition";
     case "rdv_inter":
       return "RDV intermédiaire — Observations";
     case "rdv_final":

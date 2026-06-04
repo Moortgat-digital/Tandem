@@ -19,7 +19,10 @@ type CellEditorProps = {
   /** 0 pour tous les stages sauf rdv_inter (1, 2 ou 3). */
   interIndex: number;
   initialValue: string;
+  initialAcquisitionPct: number | null;
   editable: boolean;
+  /** Affiche la jauge "% d'acquisition" (rdv_initial / rdv_inter / rdv_final). */
+  showAcquisition: boolean;
   placeholder?: string;
   onSaved?: () => void;
 };
@@ -30,6 +33,8 @@ export function CellEditor(props: CellEditorProps) {
       <CellDisplay
         value={props.initialValue}
         placeholder={props.placeholder}
+        showAcquisition={props.showAcquisition}
+        acquisitionPct={props.initialAcquisitionPct}
       />
     );
   }
@@ -39,18 +44,27 @@ export function CellEditor(props: CellEditorProps) {
 function CellDisplay({
   value,
   placeholder,
+  showAcquisition,
+  acquisitionPct,
 }: {
   value: string;
   placeholder?: string;
+  showAcquisition: boolean;
+  acquisitionPct: number | null;
 }) {
   return (
-    <div
-      className={cn(
-        "min-h-[80px] whitespace-pre-wrap rounded-md border border-dashed bg-muted/30 p-2 text-sm",
-        value ? "text-foreground" : "text-muted-foreground"
-      )}
-    >
-      {value || placeholder || "—"}
+    <div className="space-y-1.5">
+      <div
+        className={cn(
+          "min-h-[80px] whitespace-pre-wrap rounded-md border border-dashed bg-muted/30 p-2 text-sm",
+          value ? "text-foreground" : "text-muted-foreground"
+        )}
+      >
+        {value || placeholder || "—"}
+      </div>
+      {showAcquisition ? (
+        <AcquisitionGauge value={acquisitionPct} readOnly />
+      ) : null}
     </div>
   );
 }
@@ -61,6 +75,8 @@ function CellEditorActive({
   stage,
   interIndex,
   initialValue,
+  initialAcquisitionPct,
+  showAcquisition,
   placeholder,
   onSaved,
 }: CellEditorProps) {
@@ -73,6 +89,9 @@ function CellEditorActive({
   const lock = useTargetLock(target);
 
   const [value, setValue] = useState(initialValue);
+  const [acquisitionPct, setAcquisitionPct] = useState<number | null>(
+    initialAcquisitionPct
+  );
   const [status, setStatus] = useState<SaveStatus>("idle");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestRef = useRef(initialValue);
@@ -86,6 +105,10 @@ function CellEditorActive({
     latestRef.current = initialValue;
     initialRef.current = initialValue;
   }, [initialValue]);
+
+  useEffect(() => {
+    setAcquisitionPct(initialAcquisitionPct);
+  }, [initialAcquisitionPct]);
 
   useEffect(() => {
     return realtime.registerContentListener(target, (content) => {
@@ -103,7 +126,7 @@ function CellEditorActive({
   }, [realtime, target]);
 
   const save = useCallback(
-    async (content: string) => {
+    async (content: string, pct: number | null) => {
       setStatus("saving");
       const res = await fetch(`/api/tandems/${pairId}/entries`, {
         method: "PUT",
@@ -112,6 +135,7 @@ function CellEditorActive({
           priority_pos: priorityPos,
           stage,
           content,
+          acquisition_pct: pct,
           ...(stage === "rdv_inter" ? { inter_index: interIndex } : {}),
         }),
       });
@@ -136,7 +160,7 @@ function CellEditorActive({
     setStatus("dirty");
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      void save(latestRef.current);
+      void save(latestRef.current, acquisitionPct);
     }, 1000);
   }
 
@@ -146,8 +170,18 @@ function CellEditorActive({
       timerRef.current = null;
     }
     if (latestRef.current !== initialRef.current) {
-      void save(latestRef.current);
+      void save(latestRef.current, acquisitionPct);
     }
+  }
+
+  function handleAcquisitionChange(next: number | null) {
+    setAcquisitionPct(next);
+    // On flush la saisie en cours puis on sauve avec la nouvelle valeur.
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    void save(latestRef.current, next);
   }
 
   useEffect(() => {
@@ -159,7 +193,7 @@ function CellEditorActive({
   const isLockedByOther = Boolean(lock);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <Textarea
         ref={textareaRef}
         value={value}
@@ -185,6 +219,13 @@ function CellEditorActive({
           isLockedByOther && "cursor-not-allowed border-amber-400 bg-amber-50/40"
         )}
       />
+      {showAcquisition ? (
+        <AcquisitionGauge
+          value={acquisitionPct}
+          onChange={handleAcquisitionChange}
+          disabled={isLockedByOther}
+        />
+      ) : null}
       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
         <span className="text-amber-700">
           {isLockedByOther ? `${lock?.firstName} est en train d'écrire ici…` : ""}
@@ -201,6 +242,58 @@ function CellEditorActive({
                   : ""}
         </span>
       </div>
+    </div>
+  );
+}
+
+function AcquisitionGauge({
+  value,
+  onChange,
+  readOnly = false,
+  disabled = false,
+}: {
+  value: number | null;
+  onChange?: (next: number | null) => void;
+  readOnly?: boolean;
+  disabled?: boolean;
+}) {
+  const steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+        %&nbsp;Acq.
+      </span>
+      <div className="flex gap-0.5">
+        {steps.map((n) => {
+          const filled = value !== null && n <= value;
+          return (
+            <button
+              key={n}
+              type="button"
+              disabled={readOnly || disabled}
+              onClick={() => onChange?.(n === value ? null : n)}
+              className={cn(
+                "h-4 w-4 rounded-sm text-[9px] font-semibold transition",
+                filled
+                  ? "bg-coral text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted-foreground/20",
+                (readOnly || disabled) && "cursor-default opacity-90"
+              )}
+              aria-label={`${n} sur 10`}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+      <span
+        className={cn(
+          "text-[10px] font-semibold",
+          value !== null ? "text-foreground" : "text-muted-foreground"
+        )}
+      >
+        {value !== null ? `${value}/10` : "—"}
+      </span>
     </div>
   );
 }

@@ -115,7 +115,7 @@ export function SessionForm({
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="nb_priorites">Nombre maximum de priorités</Label>
+        <Label htmlFor="nb_priorites">Nombre maximum d&apos;axes de travail</Label>
         <Input
           id="nb_priorites"
           type="number"

@@ -140,7 +140,7 @@ function KpiEditor({ pairId, position, initialKpi }: Props) {
           setValue(e.target.value);
           scheduleSave(e.target.value);
         }}
-        placeholder="Comment mesurer l'évolution sur cette priorité ?"
+        placeholder="Quel objectif ? Et pour quand ?"
         className={cn(
           "min-h-[64px] resize-y text-xs",
           isLockedByOther && "cursor-not-allowed border-amber-400 bg-amber-50/40"
