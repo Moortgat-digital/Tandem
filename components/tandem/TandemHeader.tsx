@@ -157,11 +157,6 @@ export function TandemHeader({
                 Ajouter une date
               </Button>
             ) : null}
-            {!(editable.rdvInter || (dates.dates_rdv_inter ?? []).length) ? (
-              <p className="text-xs text-muted-foreground">
-                Les dates intermédiaires seront saisissables après validation du RDV initial.
-              </p>
-            ) : null}
           </div>
         </div>
 

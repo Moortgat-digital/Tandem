@@ -149,6 +149,11 @@ export function openNextStage(
 
 /**
  * Quelles dates d'en-tête sont éditables au statut donné ?
+ *
+ * Les dates sont de l'information de planification : on les laisse toutes
+ * éditables tant que le parcours n'est pas terminé, pour que le binôme
+ * puisse caler son agenda dès le RDV initial et l'ajuster en cours de
+ * route si une date doit bouger.
  */
 export function editableHeaderDates(status: TandemStatus): {
   premiereJournee: boolean;
@@ -156,12 +161,12 @@ export function editableHeaderDates(status: TandemStatus): {
   rdvInter: boolean;
   dernierRdv: boolean;
 } {
-  const during = (s: TandemStatus[]) => s.includes(status);
+  const open = status !== "completed";
   return {
-    premiereJournee: during(["not_started", "in_progress_rdv_initial"]),
-    premierRdv: during(["not_started", "in_progress_rdv_initial"]),
-    rdvInter: during(["validated_1", "in_progress_rdv_inter", "validated_inter"]),
-    dernierRdv: during(["validated_inter", "in_progress_rdv_final"]),
+    premiereJournee: open,
+    premierRdv: open,
+    rdvInter: open,
+    dernierRdv: open,
   };
 }
 
