@@ -12,7 +12,14 @@ const Schema = z
     stage: z.enum(["rdv_initial", "rdv_inter", "rdv_final", "plan_action"]),
     content: z.string().max(10_000),
     inter_index: z.number().int().min(1).max(3).optional(),
-    acquisition_pct: z.number().int().min(1).max(10).nullable().optional(),
+    acquisition_pct: z
+      .number()
+      .int()
+      .min(0)
+      .max(100)
+      .refine((v) => v % 10 === 0, { message: "doit être un multiple de 10" })
+      .nullable()
+      .optional(),
   })
   .refine(
     (v) => (v.stage === "rdv_inter" ? v.inter_index !== undefined : true),

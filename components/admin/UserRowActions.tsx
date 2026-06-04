@@ -38,6 +38,7 @@ export function UserRowActions({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [orgDialog, setOrgDialog] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<string>(
     user.organisation_id ?? ""
   );
@@ -73,6 +74,22 @@ export function UserRowActions({
       return;
     }
     setOrgDialog(false);
+    router.refresh();
+  }
+
+  async function deleteUser() {
+    setPending(true);
+    setError(null);
+    const res = await fetch(`/api/admin/users/${user.id}`, {
+      method: "DELETE",
+    });
+    setPending(false);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(data.error ?? `Erreur ${res.status}`);
+      return;
+    }
+    setDeleteDialog(false);
     router.refresh();
   }
 
@@ -114,6 +131,18 @@ export function UserRowActions({
               className="block w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent disabled:opacity-50"
             >
               {user.is_active ? "Désactiver" : "Réactiver"}
+            </button>
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setOpen(false);
+                setError(null);
+                setDeleteDialog(true);
+              }}
+              className="block w-full rounded-sm px-2 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10"
+            >
+              Supprimer…
             </button>
           </div>
         ) : null}
@@ -170,6 +199,50 @@ export function UserRowActions({
               }
             >
               {pending ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer cet utilisateur ?</DialogTitle>
+            <DialogDescription>
+              Le compte sera <strong>définitivement supprimé</strong> (accès
+              perdu, email récupérable pour une nouvelle inscription). Tout ce
+              qui dépend de cet utilisateur est supprimé en cascade :
+              <span className="mt-2 block">
+                — Binômes Tandem où il apparaît (et leurs comptes rendus,
+                priorités, validations)
+                <br />
+                — Rôles d&apos;animateur sur les sessions
+                <br />
+                — Appartenances aux sessions en tant que participant ou manager
+              </span>
+              <span className="mt-3 block">
+                L&apos;historique d&apos;audit (qui a saisi quoi, qui a validé)
+                est préservé, juste détaché de son auteur.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          {error ? (
+            <p className="text-sm text-destructive">{error}</p>
+          ) : null}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialog(false)}
+              disabled={pending}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteUser}
+              disabled={pending}
+            >
+              {pending ? "Suppression…" : "Supprimer définitivement"}
             </Button>
           </DialogFooter>
         </DialogContent>

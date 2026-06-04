@@ -174,19 +174,26 @@ function CellEditorActive({
     }
   }
 
+  const acquisitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   function handleAcquisitionChange(next: number | null) {
     setAcquisitionPct(next);
-    // On flush la saisie en cours puis on sauve avec la nouvelle valeur.
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    void save(latestRef.current, next);
+    // Debounce : un drag du curseur déclenche onChange à chaque cran.
+    if (acquisitionTimerRef.current) clearTimeout(acquisitionTimerRef.current);
+    acquisitionTimerRef.current = setTimeout(() => {
+      // Flush la saisie texte en attente d'abord, puis sauve avec la nouvelle pct.
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      void save(latestRef.current, next);
+    }, 350);
   }
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (acquisitionTimerRef.current) clearTimeout(acquisitionTimerRef.current);
     };
   }, []);
 
@@ -257,43 +264,46 @@ function AcquisitionGauge({
   readOnly?: boolean;
   disabled?: boolean;
 }) {
-  const steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const isInert = readOnly || disabled;
+  const sliderValue = value ?? 0;
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="flex items-center gap-2">
+      <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
         %&nbsp;Acq.
       </span>
-      <div className="flex gap-0.5">
-        {steps.map((n) => {
-          const filled = value !== null && n <= value;
-          return (
-            <button
-              key={n}
-              type="button"
-              disabled={readOnly || disabled}
-              onClick={() => onChange?.(n === value ? null : n)}
-              className={cn(
-                "h-4 w-4 rounded-sm text-[9px] font-semibold transition",
-                filled
-                  ? "bg-coral text-white"
-                  : "bg-muted text-muted-foreground hover:bg-muted-foreground/20",
-                (readOnly || disabled) && "cursor-default opacity-90"
-              )}
-              aria-label={`${n} sur 10`}
-            >
-              {n}
-            </button>
-          );
-        })}
-      </div>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={10}
+        value={sliderValue}
+        disabled={isInert}
+        onChange={(e) => onChange?.(parseInt(e.target.value, 10))}
+        className={cn(
+          "h-1.5 flex-1 accent-coral",
+          isInert ? "cursor-default opacity-70" : "cursor-pointer"
+        )}
+        aria-label="% d'acquisition"
+      />
       <span
         className={cn(
-          "text-[10px] font-semibold",
+          "min-w-[34px] text-right text-[11px] font-semibold tabular-nums",
           value !== null ? "text-foreground" : "text-muted-foreground"
         )}
       >
-        {value !== null ? `${value}/10` : "—"}
+        {value !== null ? `${value}%` : "—"}
       </span>
+      {!isInert && value !== null ? (
+        <button
+          type="button"
+          onClick={() => onChange?.(null)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+          aria-label="Effacer la valeur"
+          title="Effacer"
+        >
+          ×
+        </button>
+      ) : null}
     </div>
   );
 }

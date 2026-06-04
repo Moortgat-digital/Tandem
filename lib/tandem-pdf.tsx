@@ -421,7 +421,7 @@ function RenderEntry({
       )}
       {!hidePct && entry.acquisitionPct !== null ? (
         <Text style={styles.stageDate}>
-          % d&apos;acquisition : {entry.acquisitionPct}/10
+          % d&apos;acquisition : {entry.acquisitionPct}%
         </Text>
       ) : null}
     </>
