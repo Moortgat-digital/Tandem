@@ -22,8 +22,6 @@ import {
 
 type OrgOption = { id: string; display_name: string };
 
-const NONE = "__none__";
-
 export function UserRowActions({
   user,
   organisations,
@@ -41,7 +39,7 @@ export function UserRowActions({
   const [pending, setPending] = useState(false);
   const [orgDialog, setOrgDialog] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<string>(
-    user.organisation_id ?? NONE
+    user.organisation_id ?? ""
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -60,13 +58,13 @@ export function UserRowActions({
   }
 
   async function changeOrganisation() {
+    if (!selectedOrg) return;
     setPending(true);
     setError(null);
-    const orgIdValue = selectedOrg === NONE ? null : selectedOrg;
     const res = await fetch(`/api/admin/users/${user.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ organisation_id: orgIdValue }),
+      body: JSON.stringify({ organisation_id: selectedOrg }),
     });
     setPending(false);
     if (!res.ok) {
@@ -97,7 +95,7 @@ export function UserRowActions({
                 onMouseDown={(e) => {
                   e.preventDefault();
                   setOpen(false);
-                  setSelectedOrg(user.organisation_id ?? NONE);
+                  setSelectedOrg(user.organisation_id ?? "");
                   setError(null);
                   setOrgDialog(true);
                 }}
@@ -137,10 +135,9 @@ export function UserRowActions({
             <label className="text-sm font-medium">Organisation</label>
             <Select value={selectedOrg} onValueChange={setSelectedOrg}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Choisir une organisation…" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>(aucune — détaché)</SelectItem>
                 {organisations.map((o) => (
                   <SelectItem key={o.id} value={o.id}>
                     {o.display_name}
@@ -148,6 +145,10 @@ export function UserRowActions({
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Un participant ou un manager doit toujours être rattaché à une
+              organisation.
+            </p>
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -163,7 +164,9 @@ export function UserRowActions({
             <Button
               onClick={changeOrganisation}
               disabled={
-                pending || selectedOrg === (user.organisation_id ?? NONE)
+                pending ||
+                !selectedOrg ||
+                selectedOrg === user.organisation_id
               }
             >
               {pending ? "Enregistrement…" : "Enregistrer"}
