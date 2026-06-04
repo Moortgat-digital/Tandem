@@ -39,8 +39,8 @@ function PriorityHeaderDisplay({
   return (
     <div
       className={cn(
-        "rounded-md border p-2 text-sm font-medium",
-        title ? "bg-primary/5 text-foreground" : "bg-muted/40 text-muted-foreground"
+        "rounded-md border p-2 text-base font-semibold",
+        title ? "bg-background text-navy" : "bg-muted/40 text-muted-foreground"
       )}
     >
       {title || `Axe de travail ${position} — non défini`}
@@ -156,7 +156,7 @@ function PriorityHeaderEditor({
         }}
         placeholder={`Axe de travail ${position}`}
         className={cn(
-          "font-medium",
+          "h-auto py-2 text-base font-semibold text-navy placeholder:font-normal placeholder:text-muted-foreground",
           isLockedByOther && "cursor-not-allowed border-amber-400 bg-amber-50/40"
         )}
       />

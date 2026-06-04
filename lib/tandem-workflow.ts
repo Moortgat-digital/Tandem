@@ -26,11 +26,10 @@ export function editableStages(status: TandemStatus): TandemStage[] {
       return ["rdv_inter"];
     case "validated_inter":
       // En `validated_inter`, le binôme peut soit démarrer le prochain RDV
-      // intermédiaire (jusqu'à 3 occurrences) soit démarrer le RDV final en
-      // tapant dans `rdv_final`. Le `plan_action` reste fermé : il s'ouvrira
-      // uniquement quand on basculera en `in_progress_rdv_final`. Ainsi le
-      // plan d'action reste solidaire du RDV final, comme prévu.
-      return ["rdv_inter", "rdv_final"];
+      // intermédiaire (jusqu'à 3 occurrences), soit attaquer le RDV final
+      // (rdv_final + plan_action ouverts ensemble). Le Plan d'action reste
+      // bien solidaire du RDV final — on les expose toujours en paire.
+      return ["rdv_inter", "rdv_final", "plan_action"];
     case "in_progress_rdv_final":
       return ["rdv_final", "plan_action"];
     default:
